@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+# To run mini tests
+require 'minitest/autorun'
+# To load the framework files
+require_relative '../lib/framework' # framework.rb requires other files
+
+TEST_PATH = File.expand_path('../../test', __FILE__)
+TEST_FILES = if ARGV.empty?
+	Dir[File.join(TEST_PATH, '/**/*_test.rb')]
+else
+	#Format: ./test framework/version framework
+	ARGV.map {|basename| File.join(TEST_PATH, "#{basename}_test.rb") }
+end
+
+TEST_FILES.each do |test_file|
+	load test_file
+	puts test_file
+end
+puts
+
