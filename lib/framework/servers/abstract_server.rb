@@ -21,6 +21,10 @@ module Framework
 			@stopping = false
 		end
 
+        def daemonize
+            daemonize_server
+        end
+
 		def stop
 			@stopping = true
 			stop_server
@@ -31,6 +35,10 @@ module Framework
 		end
 
 		private
+
+        def daemonize_server
+            fail NotImplementedError
+        end
 
 		def start_server
 			fail NotImplementedError

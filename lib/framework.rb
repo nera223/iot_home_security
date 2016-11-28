@@ -6,4 +6,5 @@ module Framework
 	autoload :VERSION, 'framework/version'
 	autoload :WEBrickServer, 'framework/servers/webrick_server'
 	autoload :AbstractServer, 'framework/servers/abstract_server'
+	autoload :ThinServer, 'framework/servers/thin_server'
 end
