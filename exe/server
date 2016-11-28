@@ -9,5 +9,4 @@ server = Framework::ThinServer.new do |config|
 end
 
 server.daemonize
-byebug
 server.start
