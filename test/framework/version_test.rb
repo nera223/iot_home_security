@@ -1,11 +1,12 @@
-module Framework
-	class VERSIONTest < Minitest::Test
-		def test_version_is_defined
-			assert defined?(Framework::VERSION)
-		end # test_version_is_defined
-
-		def test_version_is_a_string
-			assert_kind_of String, Framework::VERSION
-		end # test_version_is_a_string
-	end # class VERSIONTest
-end # module Framework
+describe Framework do
+    describe "When loading framework class" do
+        describe "and looking at the VERSION constant" do
+            it "must be defined" do
+                Framework::VERSION.wont_be_nil
+            end
+            it "must be a string" do
+                Framework::VERSION.must_be_kind_of( String )
+            end
+        end
+    end
+end

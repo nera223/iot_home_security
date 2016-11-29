@@ -1,5 +1,7 @@
-class FrameworkTest < Minitest::Test
-	def test_framework_is_defined
-		assert defined?(Framework)
-	end
-end # class FrameworkTest
+describe Framework do
+    describe "When looking at the Framework class" do
+        it "must be defined" do
+            Framework.wont_be_nil
+        end
+    end
+end

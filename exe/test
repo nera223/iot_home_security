@@ -2,8 +2,10 @@
 
 # To run mini tests
 require 'minitest/autorun'
+require 'byebug'
 # To load the framework files
-require_relative '../lib/framework' # framework.rb requires other files
+require_relative '../lib/framework' # framework.rb requires server files
+require_relative '../lib/applications' # applications.rb requires the app files
 
 TEST_PATH = File.expand_path('../../test', __FILE__)
 TEST_FILES = if ARGV.empty?

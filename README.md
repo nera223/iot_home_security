@@ -1,4 +1,5 @@
 # iot_home_security
 Senior Design Project: IoT Home Security System
 
-This is just me making a change
+Have added Thin Server Framework
+Have developed Application structure for application server
