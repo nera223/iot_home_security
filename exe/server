@@ -8,5 +8,5 @@ server = Framework::ThinServer.new do |config|
 	config[:Host] = "0.0.0.0"
 end
 
-server.daemonize
+#server.daemonize
 server.start

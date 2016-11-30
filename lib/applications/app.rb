@@ -1,6 +1,4 @@
 # This class will be the parent class for subclasses
-require 'json'
-
 module Applications
     class Application
         # The response codes must be sent as part of the response
