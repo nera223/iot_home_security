@@ -38,9 +38,9 @@ module Framework
                 map '/alexa' do
                     run Applications::Alexa.new
                 end
-                #map '/' do
-                #    run Alexa.new
-                #end
+                map '/sensor' do
+                    run Applications::Sensor.new
+                end
             end
         end
     

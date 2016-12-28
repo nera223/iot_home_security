@@ -6,6 +6,7 @@ GEM
     eventmachine (1.2.1)
     json (1.8.3)
     minitest (5.8.3)
+    mysql2 (0.4.5)
     rack (2.0.1)
     thin (1.7.0)
       daemons (~> 1.0, >= 1.0.9)
@@ -19,6 +20,7 @@ DEPENDENCIES
   byebug
   json
   minitest
+  mysql2
   thin
 
 RUBY VERSION
