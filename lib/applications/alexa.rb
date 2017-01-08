@@ -25,37 +25,43 @@ module Applications
         
         private 
 
+        ######## Working with JSON Alexa Request
+        #===========================================================================
+
         # determine_type
         def determine_type( request )
             request["request"]["type"]
         end # determine_type
 
-        # convert_json_to_hash
-        def convert_json_to_hash( json )
-            JSON.parse( json["rack.input"].read )
-        end # convert_json_to_hash
+        # build_response
+        # By default, do not need to specify session attributes or shouldEndSession
+        def build_response(spoken_text, sessionAttributes={}, end_session=true)
+            #TODO write to database
+            version = "1.0"
+            response = {
+                :version => version,
+                :sessionAttributes => sessionAttributes,
+                :response => {
+                    :outputSpeech => {
+                        :type => "PlainText",
+                        :text => spoken_text
+                    },
+                    :shouldEndSession => end_session
+                }
+            }
+            return response
+        end # build_response
 
-        # convert_hash_to_json
-        # Returns a JSON string
-        def convert_hash_to_json( hash )
-            JSON.generate( hash )
-        end
+        #===========================================================================
 
         # respond_to_launch
         def respond_to_launch( request )
            # For now, just give a simple hello message 
-           response = {
-                   :version => "1.0",
-                   :sessionAttributes => {},
-                   :response => {
-                           :outputSpeech => {
-                                   :type => "PlainText",
-                                   :text => "Welcome to your Securitech I O T Home Security System. You can tell me commands such as. Ask Securitech to disable the alarm. Or. Tell Securitech to enable the window sensor"
-                           },
-                           :shouldEndSession => true
-                   }
-           }
-           return response
+           message = "Welcome to your Securitech I O T Home Security System."\
+           " You can tell me commands such as."\
+           " Ask Securitech to disable the alarm. Or."\
+           " Tell Securitech to enable the window sensor"
+           build_response( message )
         end # respond_to_launch
         
         # respond_to_intent
@@ -72,70 +78,42 @@ module Applications
                 response = disable_sensor( request )
             when "EnableSensor"
                 response = enable_sensor( request )
+            when "SendHelp"
+                response = send_help( request )
             end
             return response
         end # respond_to_intent
-        
+
         def disable_system( request )
-            # For now, just respond with a simple message
-            response = {
-                   :version => "1.0",
-                   :sessionAttributes => {},
-                   :response => {
-                           :outputSpeech => {
-                                   :type => "PlainText",
-                                   :text => "Okay, deactivating the alarm"
-                           },
-                           :shouldEndSession => true
-                   }
-            }
+            message = "Okay, deactivating the alarm"
+            build_response( message )
         end
 
         def enable_system( request )
-            # For now, just respond with a simple message
-            response = {
-                   :version => "1.0",
-                   :sessionAttributes => {},
-                   :response => {
-                           :outputSpeech => {
-                                   :type => "PlainText",
-                                   :text => "Okay, I'm going to activate the alarm"
-                           },
-                           :shouldEndSession => true
-                   }
-            }
+            message = "Okay, I'm going to activate the alarm"
+            build_response( message )
         end
 
         def disable_sensor( request )
             sensor_type = request["request"]["intent"]["slots"]["Sensor"]["value"]
-            # For now, just respond with a simple message
-            response = {
-                   :version => "1.0",
-                   :sessionAttributes => {},
-                   :response => {
-                           :outputSpeech => {
-                                   :type => "PlainText",
-                                   :text => "Alright, deactivating the #{sensor_type} sensor"
-                           },
-                           :shouldEndSession => true
-                   }
-            }
+            message = "Alright, deactivating the #{sensor_type} sensor"
+            update_database( "UPDATE #{SENSOR_FUNCTION} SET status='0' WHERE name='#{sensor_type}'" )
+            build_response( message )
         end
 
         def enable_sensor( request )
-            # For now, just respond with a simple message
             sensor_type = request["request"]["intent"]["slots"]["Sensor"]["value"]
-            response = {
-                   :version => "1.0",
-                   :sessionAttributes => {},
-                   :response => {
-                           :outputSpeech => {
-                                   :type => "PlainText",
-                                   :text => "Alright, I'm going to activate the #{sensor_type} sensor"
-                           },
-                           :shouldEndSession => true
-                   }
-            }
+            message = "Alright, I'm going to activate the #{sensor_type} sensor"
+            update_database( "UPDATE #{SENSOR_FUNCTION} SET status='1' WHERE name='#{sensor_type}'" )
+            build_response( message )
+        end
+
+        def send_help( request )
+            message = "Notifying your emergency contact"
+            build_response( message )
+            #TODO Connect to Ahmed's notification system here
+            # Trigger alarm immediately no matter what the sensors say
+            Alarm.new( true )
         end
 
         # verify_request
