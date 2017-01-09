@@ -12,14 +12,22 @@ module Applications
         #   [+request_in+ (CLASS)] = raw request to the app server
         # Outputs:
         #   (Array) = The response code, content type, and response body
+        #NOTE DO NOT CHANGE THE NAME OF THIS FUNCTION
         def call(request_in)
+            # Establish a connection with the database
+            #   # creates instance variable @db_client that can be used throughout the
+            #   # class to query the database
+            establish_database_connection
             # Log the request in the database
             # Send request to subclass
             response_out = get_response(request_in)
+            # Close the database connection
+            close_database_connection
+            # Return response to the application server
             return response_out
         end
         
-        # These methods will be available to all classes
+        # These methods will be available to all classes ===========================
         # convert_json_to_hash
         def convert_json_to_hash( json )
             JSON.parse( json["rack.input"].read )
@@ -31,23 +39,33 @@ module Applications
             JSON.generate( hash )
         end
 
-        # update_database
+        # query_database
         # This method is a wrapper to run a query on a database
-        def update_database( q )
+        def query_database( q )
             begin
-                client = Database.new.connect
-                client.query( q )
-                # Handle invalid mysql requests here
+                response = @db_client.query( q )
+                # Handle invalid mysql queries here
             rescue => error
-                build_response("There was an error communicating with the MySQL service")
-            ensure
-               client.close
+                puts "There was an error querying the database"
             end
-        end # update_database
+            return response
+        end # query_database
         
         #===========================================================================
 
         private
+
+        def establish_database_connection
+            begin
+                @db_client = Database.new.connect
+            rescue => error
+                puts "There was an error establishing a connection with the My S Q L server"
+            end
+        end # establish_database_connection
+
+        def close_database_connection
+            @db_client.close if @db_client.respond_to?(:close, true)
+        end # close_database_connection
 
         def get_response( foo )
             raise NotImplementedError

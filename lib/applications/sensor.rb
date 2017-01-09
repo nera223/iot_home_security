@@ -20,14 +20,14 @@ module Applications
         
         private 
 
-        # update_database
+        # determine_sensor
         def determine_sensor( request )
             # Update database status of appropriate sensor
             sensor_type = request["sensor"]
             sensor_status = request["status"]
             #TODO update database also with timestamp
-            update_database( "UPDATE #{SENSOR_STATUS} SET status='#{sensor_status}' WHERE name='#{sensor_type}'" )
-        end # update_database
+            query_database( "UPDATE #{SENSOR_STATUS} SET status='#{sensor_status}' WHERE name='#{sensor_type}'" )
+        end # determine_sensor
 
     end # Sensor
 end
