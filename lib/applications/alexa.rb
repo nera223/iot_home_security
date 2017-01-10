@@ -11,13 +11,13 @@ module Applications
         # Outputs: response
         def get_response(request_in)
             # The request will be JSON format
-            request = convert_json_to_hash(request_in)
-            type = determine_type( request )
+            @request = convert_json_to_hash(request_in)
+            type = determine_type
             case type
             when "LaunchRequest"
-                response = respond_to_launch(request)
+                response = respond_to_launch
             when "IntentRequest"
-                response = respond_to_intent(request)
+                response = respond_to_intent
             end
             # Make this into a nicer function
             [GOOD_RESPONSE_CODE, {'Content-Type' => 'applicatino/json;charset=UTF-8'}, [convert_hash_to_json( response )]]
@@ -29,8 +29,8 @@ module Applications
         #===========================================================================
 
         # determine_type
-        def determine_type( request )
-            request["request"]["type"]
+        def determine_type
+            @request["request"]["type"]
         end # determine_type
 
         # build_response
@@ -55,7 +55,7 @@ module Applications
         #===========================================================================
 
         # respond_to_launch
-        def respond_to_launch( request )
+        def respond_to_launch
             # Determine if the emergency contact has already been set up
             emergency_contact_available = !get_emergency_contact.empty?
             if emergency_contact_available
@@ -77,25 +77,35 @@ module Applications
         end # respond_to_launch
         
         # respond_to_intent
-        def respond_to_intent( request )
+        def respond_to_intent
             # For now, just identify the type of intent and give a simple message
             # that acknowledges that request
-            intent = request["request"]["intent"]["name"]
+            if @request["session"]["new"]
+                intent = @request["request"]["intent"]["name"]
+            else
+                # Because of poor handling on Amazon's end, may need to
+                #   # override intent based on session attribute
+                intent = @request["session"]["attributes"]["intent"]
+            end
+            raise "intent not defined in code on live session!" if intent.nil?
             case intent
             when "DisableSystem"
-                response = disable_system( request )
+                response = disable_system
             when "EnableSystem"
-                response = enable_system( request )
+                response = enable_system
             when "DisableSensor"
-                response = disable_sensor( request )
+                response = disable_sensor
             when "EnableSensor"
-                response = enable_sensor( request )
+                response = enable_sensor
             when "SendHelp"
-                response = send_help( request )
+                response = send_help
             when "EmergencyContact"
-                response = manage_emergency_contact( request )
+                response = manage_emergency_contact
             else
                 response = build_response("You forgot to code this intent")
+            end
+            if response.nil?
+                response = build_response("I did not understand your request")
             end
             return response
         end # respond_to_intent
@@ -104,14 +114,14 @@ module Applications
         # This function adds, removes, emergency contacts from the database
         #   # This will be an interactive function so the request input could
         #   # be a reply. Therefore the function has multiple return statements
-        def manage_emergency_contact( request )
-            is_new_session = request["session"]["new"]
-            # Determine the action from the user
-            #   # may be given in the request or may need to ask for it
-            contact_action = request["request"]["intent"]["slots"]["contact_action"]["value"]
+        def manage_emergency_contact
+            is_new_session = @request["session"]["new"]
             if is_new_session
+                # Determine the action from the user
+                #   # may be given in the request or may need to ask for it
+                contact_action = @request["request"]["intent"]["slots"]["contact_action"]["value"]
                 if contact_action != "manage"
-                    # Get specific with the request
+                    call_emergency_contact_function( contact_action )
                 else
                     # Ask the user exactly what they would like to do. Give the count of 
                     #   # the emergency contacts currently available to help the user out
@@ -120,7 +130,9 @@ module Applications
                         message = "You currently have no emergency contacts stored,"\
                         " Would you like to add one now?"
                         # Do not end session. User can directly reply to this command
-                        return build_response(message, {"contact_action" => "add"}, false)
+                        return build_response(message,
+                               {"intent" => "EmergencyContact", "contact_action" => "add"},
+                               false)
                     else
                         message = "You currently have #{emergency_contacts.count} contacts stored."\
                         " You can tell Securitech to add, change, or remove an emergency contact,"\
@@ -129,16 +141,73 @@ module Applications
                     end
                 end
             else
-                #TODO determine if yes or no answer
-                if contact_action.nil?
+                # determine if yes or no answer to question of whether user wants to perform an action now
+                if @request["request"]["intent"]["slots"]["contact_response"]["value"] == "yes" ||
+                        !@request["session"]["attributes"]["continue"].nil?
                     # The contact action will be stored in a session attribute instead
-                    contact_action = request["session"]["attributes"]["contact_action"]
-                end
-                case contact_action
-                when "add", "create"
+                    contact_action = @request["session"]["attributes"]["contact_action"]
+                    return call_emergency_contact_function( contact_action )
+                else
+                    return build_response("OK")
                 end
             end
         end
+
+        # call_emergency_contact_function
+        def call_emergency_contact_function( action )
+            # Get specific with the request
+            case action
+            when "add", "create", "insert"
+                response = add_emergency_contact
+            when "remove", "delete"
+                response = remove_emergency_contact
+            when "change", "edit"
+                response = change_emergency_contact
+            when "tell me", "read me"
+                response = display_emergency_contact
+            end
+            return response
+        end # call_emergency_contact_function
+        
+        # These methods shall use the "continue" attribute to arrive back here
+
+        # add_emergency_contact
+        def add_emergency_contact
+            # Ask the user a series of questions corresponding to the fields for the database columns
+            if @request["session"]["attributes"] && @request["session"]["attributes"]["continue"]
+                # This is a response to a previous question
+                case @request["session"]["attributes"]["continue"]
+                when "add__full_name"
+                    first, last = handle_full_name( @request["request"]["intent"]["slots"]["person_name"] )
+                    update_database("INSERT INTO #{EMERGENCY_CONTACT} (first_name, last_name) VALUES (#{first}, #{last})")
+                    #TODO left off here with asking for relation and phone number
+                    #TODO also make sure to test name first
+                    return build_response("Adding full name to database")
+                when "add__phone"
+                end
+            else
+                # First time request
+                message = "To start off, tell me the first and last name"\
+                " of the contact you would like to add."
+                # Must return the right sessin attributes so that the request ends back in this method
+                return build_response( message,
+                        {"intent" => "EmergencyContact", "contact_action" => "add", "continue" => "add__full_name"},
+                        false )
+            end
+            build_response("Adding")
+        end # add_emergency_contact
+
+        def remove_emergency_contact
+            build_response("Removing")
+        end # remove_emergency_contact
+
+        def change_emergency_contact
+            build_response("Changing")
+        end # change_emergency_contact
+
+        def display_emergency_contact
+            build_response("Displaying")
+        end # display_emergency_contact
         
         # get_emergency_contact
         # Returns a hash of the emergency contact details or nil if empty
@@ -147,32 +216,32 @@ module Applications
             response.entries
         end # get_emergency_contact
 
-        def disable_system( request )
+        def disable_system
             message = "Okay, deactivating the alarm"
             build_response( message )
         end
 
-        def enable_system( request )
+        def enable_system
             message = "Okay, I'm going to activate the alarm"
             build_response( message )
         end
 
-        def disable_sensor( request )
-            sensor_type = request["request"]["intent"]["slots"]["Sensor"]["value"]
+        def disable_sensor
+            sensor_type = @request["request"]["intent"]["slots"]["Sensor"]["value"]
             message = "Alright, deactivating the #{sensor_type} sensor"
             query_database( "UPDATE #{SENSOR_FUNCTION} SET status='0' WHERE name='#{sensor_type}'" )
             build_response( message )
         end
 
-        def enable_sensor( request )
-            sensor_type = request["request"]["intent"]["slots"]["Sensor"]["value"]
+        def enable_sensor
+            sensor_type = @request["request"]["intent"]["slots"]["Sensor"]["value"]
             message = "Alright, I'm going to activate the #{sensor_type} sensor"
             query_database( "UPDATE #{SENSOR_FUNCTION} SET status='1' WHERE name='#{sensor_type}'" )
             build_response( message )
         end
 
         # send_help
-        def send_help( request )
+        def send_help
             message = "Notifying your emergency contact"
             build_response( message )
             #TODO Connect to Ahmed's notification system here
