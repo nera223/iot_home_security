@@ -178,12 +178,18 @@ module Applications
                 # This is a response to a previous question
                 case @request["session"]["attributes"]["continue"]
                 when "add__full_name"
-                    first, last = handle_full_name( @request["request"]["intent"]["slots"]["person_name"] )
-                    update_database("INSERT INTO #{EMERGENCY_CONTACT} (first_name, last_name) VALUES (#{first}, #{last})")
-                    #TODO left off here with asking for relation and phone number
-                    #TODO also make sure to test name first
-                    return build_response("Adding full name to database")
+                    first, last = handle_full_name( @request["request"]["intent"]["slots"]["person_name"]["value"] )
+                    query_database("INSERT INTO #{EMERGENCY_CONTACT} (first_name, last_name) VALUES ('#{first}', '#{last}')")
+                    return build_response("OK, what is the phone number for #{first}?",
+                            {"intent" => "EmergencyContact", "contact_action" => "add", "continue" => "add__phone", "first_name" => first, "last_name" => last},
+                            false)
                 when "add__phone"
+                    phone_number = @request["request"]["intent"]["slots"]["phone_number"]["value"]
+                    #TODO code to check for valid phone number
+                    first_name = @request["session"]["attributes"]["first_name"]
+                    last_name = @request["session"]["attributes"]["last_name"]
+                    query_database( "UPDATE #{EMERGENCY_CONTACT} SET phone_number='#{phone_number}' WHERE (first_name='#{first_name}') AND (last_name='#{last_name}')" )
+                    return build_response("Got it. Done adding contact to the system.")
                 end
             else
                 # First time request
@@ -197,8 +203,63 @@ module Applications
             build_response("Adding")
         end # add_emergency_contact
 
+        # handle_full_name
+        def handle_full_name( full_name )
+            #TODO ask for last name if only given first name?
+            split_name = full_name.split(" ").map{ |m| m.capitalize }
+            first = split_name.first
+            last = split_name.size > 1 ? split_name.last : nil
+            return [first,last]
+        end # handle_full_name
+
         def remove_emergency_contact
-            build_response("Removing")
+            current_contacts = get_emergency_contact
+            if @request["session"]["attributes"] && @request["session"]["attributes"]["continue"]
+                case @request["session"]["attributes"]["continue"]
+                when "remove__name"
+                    # try to match name, else respond with error message
+                    name = @request["request"]["intent"]["slots"]["person_name"]["value"]
+                    byebug
+                    #TODO test only given first name
+                    first, last = handle_full_name( name )
+                    removed_contact = []
+                    if last.nil?
+                        # can only compare with the first name
+                        removed_contact = current_contacts.map{ |m| m["first_name"].downcase == first.downcase ? m["first_name"] : nil }.compact
+                    else
+                        # compare both the first and last name
+                        removed_contact = current_contacts.map{ |m| m["first_name"].downcase == first.downcase && m["last_name"].downcase == last.downcase ? m["first_name"] : nil }.compact
+                    end
+                    if removed_contact.empty?
+                        # Return error message
+                        message = "I did not find any contact named #{first} #{last}."\
+                        " Please try again."
+                        return build_message( message )
+                    else
+                        # Remove the contact(s) from the database
+                        removed_contact.each do |contact|
+                            if last.nil?
+                                query_database( "DELETE FROM #{EMERGENCY_CONTACT} WHERE first_name='#{first}'" )
+                            else
+                                query_database( "DELETE FROM #{EMERGENCY_CONTACT} WHERE (first_name='#{first}') AND (last_name='#{last}')" )
+                            end
+                        end
+                    end
+                    return build_response("Successfully removed #{first} from the data base.")
+                end
+            else
+                # First time request
+                if current_contacts.empty?
+                    message = "You currently have no emergency contacts stored."
+                    return build_response( message )
+                else
+                    contact_string = current_contacts.map{ |m| "#{m["first_name"]} #{m["last_name"]}"}.join(", ")
+                    message = "You have #{current_contacts.count} contacts stored. These are #{contact_string}. Which one would you like to remove?"
+                    return build_response( message,
+                            {"intent" => "EmergencyContact", "contact_action" => "remove", "continue" => "remove__name"},
+                            false)
+                end
+            end
         end # remove_emergency_contact
 
         def change_emergency_contact
@@ -210,7 +271,7 @@ module Applications
         end # display_emergency_contact
         
         # get_emergency_contact
-        # Returns a hash of the emergency contact details or nil if empty
+        # Returns an array of the hashes of the emergency contact details
         def get_emergency_contact
             response = query_database("SELECT * FROM #{EMERGENCY_CONTACT}")
             response.entries
@@ -229,14 +290,15 @@ module Applications
         def disable_sensor
             sensor_type = @request["request"]["intent"]["slots"]["Sensor"]["value"]
             message = "Alright, deactivating the #{sensor_type} sensor"
-            query_database( "UPDATE #{SENSOR_FUNCTION} SET status='0' WHERE name='#{sensor_type}'" )
+            #TODO The online interface needs to be able to understand the different senosr names
+            query_database( "UPDATE #{SENSOR_STATUS} SET enabled='0' WHERE name='#{sensor_type}'" )
             build_response( message )
         end
 
         def enable_sensor
             sensor_type = @request["request"]["intent"]["slots"]["Sensor"]["value"]
             message = "Alright, I'm going to activate the #{sensor_type} sensor"
-            query_database( "UPDATE #{SENSOR_FUNCTION} SET status='1' WHERE name='#{sensor_type}'" )
+            query_database( "UPDATE #{SENSOR_STATUS} SET enabled='1' WHERE name='#{sensor_type}'" )
             build_response( message )
         end
 
@@ -249,7 +311,7 @@ module Applications
             Alarm.new( true )
         end
 
-        # verify_request
+        #TODO verify_request
         def verify_request(request_in)
             # Must verify that the request came from Amazon and not some junkie
             # In the case that the request is invalid, must respond with invalid error code

@@ -1,7 +1,5 @@
 require 'mysql2'
 # This file will contains methods to connect to database
-# This constant points to the table of sensor functions (off/on)
-SENSOR_FUNCTION = "sensor_function"
 # This table will be updated with the reading of the current sensor status
 SENSOR_STATUS   = "sensor_status"
 # This table will hold information of the information for the emergency contact
