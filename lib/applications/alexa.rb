@@ -20,7 +20,7 @@ module Applications
                 response = respond_to_intent
             end
             # Make this into a nicer function
-            [GOOD_RESPONSE_CODE, {'Content-Type' => 'applicatino/json;charset=UTF-8'}, [convert_hash_to_json( response )]]
+            [GOOD_RESPONSE_CODE, {'Content-Type' => 'application/json;charset=UTF-8'}, [convert_hash_to_json( response )]]
         end # get_response
         
         private 
@@ -304,11 +304,11 @@ module Applications
 
         # send_help
         def send_help
-            message = "Notifying your emergency contact"
-            build_response( message )
+            message = "Notifying your emergency contact. Help is on the way!"
             #TODO Connect to Ahmed's notification system here
             # Trigger alarm immediately no matter what the sensors say
             Alarm.new( true )
+            build_response( message )
         end
 
         #TODO verify_request
