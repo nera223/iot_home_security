@@ -39,7 +39,7 @@ module Applications
         #   # Also, retrieve the battery level to update that in the system
         def determine_sensor( request )
             # Update database status of appropriate sensor
-            sensor_mac = request["sensor_mac"]
+            sensor_mac = request["MAC"]
             sensor_status = request["status"]
             # Find the sensor in the database
             # Update the battery life, status, etc.
@@ -51,7 +51,7 @@ module Applications
         def request_valid?( request )
             # Request must contain status update, mac address, sensor type
             # optional to have battery level for now
-            required_keys = ["sensor_mac", "status"]
+            required_keys = ["MAC", "status"]
             required_keys.each do |key|
                 if !request.has_key?(key)
                     return false

@@ -8,5 +8,8 @@ server = Framework::ThinServer.new do |config|
 	config[:Host] = "0.0.0.0"
 end
 
+# If an argument is run with the script, the server will run in
+#   # verbose mode, so that incoming packets can be tracked without
+#   # having to tail the log file
 server.daemonize if ARGV.empty?
 server.start

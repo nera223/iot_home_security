@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+# This script will check if the application server is already running or not
+pid_file = "/tmp/pids/thin.pid"
+if File.exist?( pid_file )
+    response = "SERVER RUNNING!"
+else
+    response = "NOT RUNNING"
+end
+
+puts response

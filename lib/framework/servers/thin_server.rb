@@ -44,5 +44,5 @@ module Framework
             end
         end
     
-    end # WEBrickServer
+    end # ThinServer
 end # Framework

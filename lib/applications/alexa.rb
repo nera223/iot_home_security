@@ -101,6 +101,8 @@ module Applications
                 response = send_help
             when "EmergencyContact"
                 response = manage_emergency_contact
+			when "AskPassword"
+				response = ask_password
             else
                 response = build_response("You forgot to code this intent")
             end
@@ -109,6 +111,13 @@ module Applications
             end
             return response
         end # respond_to_intent
+		
+		# ask_password
+		# This function will be invoked when the user asks to turn off the alarm
+		# 	# Must prompt for the password
+		def ask_password
+			
+		end # ask_password
 
         # manage_emergency_contact
         # This function adds, removes, emergency contacts from the database
