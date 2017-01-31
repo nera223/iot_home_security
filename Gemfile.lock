@@ -18,6 +18,7 @@ PLATFORMS
 
 DEPENDENCIES
   byebug
+  daemons
   json
   minitest
   mysql2

@@ -4,6 +4,9 @@ require 'mysql2'
 SENSOR_STATUS   = "sensor_status"
 # This table will hold information of the information for the emergency contact
 EMERGENCY_CONTACT = "emergency_contacts"
+# Holds MACs for use only during initial scan/connect py script
+SCANNED_MACS = "scanned_macs"
+
 
 class Database
 

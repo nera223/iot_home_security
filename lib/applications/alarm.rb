@@ -41,6 +41,11 @@ module Applications
         def turn_on_speaker
             #TODO actually play sound on the speaker
             puts "SPEAKER ON"
+            # The daemons gem will handle the starting and stopping of the 
+            #   # audio file playing process
+            # Call the ruby script
+            sound_control_file = File.join( File.expand_path( File.dirname(__FILE__) ), 'sound_files', 'sound_control.rb' )
+            #exec("#{sound_control_file} start")
         end # turn_on_speaker
     end # class Alarm
 end # module Applications

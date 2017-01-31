@@ -1,0 +1,27 @@
+play_sound.rb: process with pid 24663 started.
+/home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:219:in `load': cannot load such file -- /home/pi/iot_home_security/lib/applications/play_sound.rb (LoadError)
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:219:in `start_load'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:298:in `start'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/controller.rb:56:in `run'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons.rb:148:in `block in run'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/cmdline.rb:92:in `catch_exceptions'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons.rb:147:in `run'
+	from /home/pi/iot_home_security/lib/applications/sound_files/sound_control.rb:11:in `<main>'
+play_sound.rb: process with pid 24671 started.
+/home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:219:in `load': cannot load such file -- /home/pi/iot_home_security/lib/applications/play_sound.rb (LoadError)
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:219:in `start_load'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:298:in `start'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/controller.rb:56:in `run'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons.rb:148:in `block in run'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/cmdline.rb:92:in `catch_exceptions'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons.rb:147:in `run'
+	from /home/pi/iot_home_security/lib/applications/sound_files/sound_control.rb:11:in `<main>'
+play_sound.rb: process with pid 24679 started.
+/home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:219:in `load': cannot load such file -- /home/pi/iot_home_security/lib/applications/play_sound.rb (LoadError)
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:219:in `start_load'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/application.rb:298:in `start'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/controller.rb:56:in `run'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons.rb:148:in `block in run'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons/cmdline.rb:92:in `catch_exceptions'
+	from /home/pi/.rvm/gems/ruby-2.3.0/gems/daemons-1.2.4/lib/daemons.rb:147:in `run'
+	from /home/pi/iot_home_security/lib/applications/sound_files/sound_control.rb:11:in `<main>'
