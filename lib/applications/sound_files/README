@@ -1,0 +1,2 @@
+sound_contro.rb can be run as if it was a service
+start, stop, status, and restart commands are supported

@@ -5,6 +5,10 @@ require 'json'
 require_relative 'app'
 
 module Applications
+    # This constant defines the maximum number of password attempts allowed by the user to turn
+    #   # off the alarm
+    MAXIMUM_PASSWORD_ATTEMPTS = 3
+    
     class Alexa < Application
         # get_response
         # Inputs: raw request
@@ -103,6 +107,8 @@ module Applications
                 response = manage_emergency_contact
 			when "AskPassword"
 				response = ask_password
+            when "SetPassword"
+                response = set_password
             else
                 response = build_response("You forgot to code this intent")
             end
@@ -111,14 +117,53 @@ module Applications
             end
             return response
         end # respond_to_intent
-		
+        
 		# ask_password
 		# This function will be invoked when the user asks to turn off the alarm
 		# 	# Must prompt for the password
 		def ask_password
-			
+            is_new_session = @request["session"]["new"]
+            if is_new_session
+                # The user has just requested to turn off the alarm,
+                #	# you must ask for the numeric password
+                message = "What is the password?"
+                return build_response(message,
+                                      {"intent" => "AskPassword", "tries" => 1},
+                                      false)
+            else # the session is not new
+                # Determine if the password given was correct
+                correct_password = get_password_from_database
+                if @request["request"]["intent"]["slots"]["number_sequence"]["value"] == correct_password
+                    response = disable_system # return statement in this method
+                    Alarm.new( @db_client )
+                    return response
+                elsif (tries = @request["session"]["attributes"]["tries"].to_i) < MAXIMUM_PASSWORD_ATTEMPTS
+                    # The pasword was not correct, so ask again until the number of tries has been exceeded
+                    message = "The password was not correct. Try again."
+                    return build_response(message,
+                                   {"intent" => "AskPassword", "tries" => tries + 1},
+                                   false)
+                else
+                    # You have run out of tries so you cannot turn off the alarm
+                    message = "The maximum number of tries has been exceeded. I will notify the"\
+                    " emergency contact."
+                    #TODO notify emergency contact
+                    return build_response(message)
+                end
+            end
 		end # ask_password
-
+        
+        # set_password
+        # This function will be called when the user wants to set the password
+        #   # First, the current password must be given and then a new password can be set
+        def set_password
+            is_new_session = @requet["session"]["new"]
+            if is_new_session
+                message = "To reset your password, you must first tell me the current password."
+                build_response(message)
+            end
+        end # set_password
+        
         # manage_emergency_contact
         # This function adds, removes, emergency contacts from the database
         #   # This will be an interactive function so the request input could
@@ -151,8 +196,9 @@ module Applications
                 end
             else
                 # determine if yes or no answer to question of whether user wants to perform an action now
-                if @request["request"]["intent"]["slots"]["contact_response"]["value"] == "yes" ||
-                        !@request["session"]["attributes"]["continue"].nil?
+                if !@request["session"]["attributes"]["continue"].nil? ||
+                    @request["request"]["intent"]["slots"]["contact_response"]["value"] == "yes"
+                        
                     # The contact action will be stored in a session attribute instead
                     contact_action = @request["session"]["attributes"]["contact_action"]
                     return call_emergency_contact_function( contact_action )
@@ -193,12 +239,13 @@ module Applications
                             {"intent" => "EmergencyContact", "contact_action" => "add", "continue" => "add__phone", "first_name" => first, "last_name" => last},
                             false)
                 when "add__phone"
-                    phone_number = @request["request"]["intent"]["slots"]["phone_number"]["value"]
+                    phone_number = @request["request"]["intent"]["slots"]["number_sequence"]["value"]
                     #TODO code to check for valid phone number
                     first_name = @request["session"]["attributes"]["first_name"]
                     last_name = @request["session"]["attributes"]["last_name"]
                     query_database( "UPDATE #{EMERGENCY_CONTACT} SET phone_number='#{phone_number}' WHERE (first_name='#{first_name}') AND (last_name='#{last_name}')" )
-                    return build_response("Got it. Done adding contact to the system.")
+                    message = "Got it. In order to receive E mail messages please log on to the web interface and add your E mail address"
+                    return build_response(message)
                 end
             else
                 # First time request
@@ -228,8 +275,6 @@ module Applications
                 when "remove__name"
                     # try to match name, else respond with error message
                     name = @request["request"]["intent"]["slots"]["person_name"]["value"]
-                    byebug
-                    #TODO test only given first name
                     first, last = handle_full_name( name )
                     removed_contact = []
                     if last.nil?
@@ -263,7 +308,7 @@ module Applications
                     return build_response( message )
                 else
                     contact_string = current_contacts.map{ |m| "#{m["first_name"]} #{m["last_name"]}"}.join(", ")
-                    message = "You have #{current_contacts.count} contacts stored. These are #{contact_string}. Which one would you like to remove?"
+                    message = "You have #{current_contacts.count} contacts stored. These are #{contact_string}. Please say the full name of the contact you would like to remove?"
                     return build_response( message,
                             {"intent" => "EmergencyContact", "contact_action" => "remove", "continue" => "remove__name"},
                             false)
@@ -272,12 +317,19 @@ module Applications
         end # remove_emergency_contact
 
         def change_emergency_contact
-            build_response("Changing")
+            build_response("Changing. This code has not been implemented")
         end # change_emergency_contact
 
         def display_emergency_contact
-            build_response("Displaying")
+            build_response("Displaying. This code has not been implemented")
         end # display_emergency_contact
+        
+        # get_password_from_database
+        def get_password_from_database
+            # There should only be one row in the table so only one password
+            response = query_database("SELECT password FROM #{USER_INFORMATION}")
+            response.entries.first["password"]
+        end # get_password_from_database
         
         # get_emergency_contact
         # Returns an array of the hashes of the emergency contact details
@@ -288,18 +340,20 @@ module Applications
 
         def disable_system
             message = "Okay, deactivating the alarm"
+            query_database( "UPDATE #{SENSOR_STATUS} SET enabled=0" )
             build_response( message )
         end
 
         def enable_system
             message = "Okay, I'm going to activate the alarm"
+            query_database( "UPDATE #{SENSOR_STATUS} SET enabled=1")
             build_response( message )
         end
 
         def disable_sensor
             sensor_type = @request["request"]["intent"]["slots"]["Sensor"]["value"]
             message = "Alright, deactivating the #{sensor_type} sensor"
-            #TODO The online interface needs to be able to understand the different senosr names
+            #TODO The online interface needs to be able to understand the different sensor names
             query_database( "UPDATE #{SENSOR_STATUS} SET enabled='0' WHERE name='#{sensor_type}'" )
             build_response( message )
         end
@@ -316,7 +370,7 @@ module Applications
             message = "Notifying your emergency contact. Help is on the way!"
             #TODO Connect to Ahmed's notification system here
             # Trigger alarm immediately no matter what the sensors say
-            Alarm.new( true )
+            Alarm.new( @db_client,  true )
             build_response( message )
         end
 
