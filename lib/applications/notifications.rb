@@ -4,6 +4,7 @@
 module Applications
     CONFIG_PATH = "/home/pi/iot_home_security/lib/applications/email_configuration"
     LIVESTREAM_URL = "securiotech.owendroth.com:304"
+    EMAIL_CONTROL_FILE = File.join( File.expand_path( File.dirname(__FILE__) ), 'email_configuration', 'email_control.rb' )
     # Pseudocode
     # Generate a text file with the necessary configuration options
     #   # Will contain destination email, phone number, message, URL to camera feed (if applicable)
@@ -15,6 +16,7 @@ module Applications
             @db_client = db_client
             @sensors = alarm_sensors
             generate_text_file
+            call_email_script
         end # initialize
     
         private
@@ -41,6 +43,12 @@ module Applications
                 f.puts "Livestream, #{LIVESTREAM_URL}\n"
             end
         end # generate_text_file
+        
+        # call_email_script
+        def call_email_script
+            # This needs to be run as a background process because sending the email could take some time
+            exec("#{EMAIL_CONTROL_FILE} start")
+        end # call_email_script
         
         # fetch_photo_path
         def fetch_photo_path

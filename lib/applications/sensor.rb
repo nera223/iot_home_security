@@ -1,13 +1,13 @@
 # This file contains a class to communicate with all the sensor classes
 
-require_relative 'app'
+#require_relative 'app'
 
 module Applications
     class Sensor < Application
         # get_response
         # Inputs: raw request
         # Outputs: response
-        def get_response(request_in)
+        def get_response( request_in )
             # Change the value for the sensor in the database
             # Determine if alarm needs to be raised based on ALL
             #   # sensor status' in the database

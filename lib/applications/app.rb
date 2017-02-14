@@ -1,5 +1,6 @@
 # This class will be the parent class for subclasses
 require 'json'
+require 'daemons'
 
 module Applications
     class Application

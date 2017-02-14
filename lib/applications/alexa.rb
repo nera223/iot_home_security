@@ -1,8 +1,8 @@
 # This file contains the Alexa class to respond to Amazon Web Services HTTPS requests sent through the user's Amazon Echo device
 # Sample response looks like: [200, {'Content-Type' => 'text/plain'}, ["Message"]]
 
-require 'json'
-require_relative 'app'
+#require 'json'
+#require_relative 'app'
 
 module Applications
     # This constant defines the maximum number of password attempts allowed by the user to turn
