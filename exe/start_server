@@ -6,6 +6,7 @@ require 'byebug'
 server = Framework::ThinServer.new do |config|
 	config[:Port] = 3000
 	config[:Host] = "0.0.0.0"
+    config[:max_connections] = 200
 end
 
 # If an argument is run with the script, the server will run in

@@ -109,6 +109,8 @@ module Applications
 				response = ask_password
             when "SetPassword"
                 response = set_password
+            when "LastEvent"
+                response = last_event
             else
                 response = build_response("You forgot to code this intent")
             end
@@ -134,7 +136,12 @@ module Applications
                 # Determine if the password given was correct
                 correct_password = get_password_from_database
                 if @request["request"]["intent"]["slots"]["number_sequence"]["value"] == correct_password
-                    response = disable_system # return statement in this method
+                    if @request["session"]["attributes"].has_key?( "original_intent" )
+                        response = build_response( "Okay. What would you like your new numeric password to be?",
+                                                   {"intent" => "SetPassword", "old_password" => correct_password, "confirm" => false},
+                                                   false)
+                    else
+                        response = disable_system # return statement in this method
                     Alarm.new( @db_client )
                     return response
                 elsif (tries = @request["session"]["attributes"]["tries"].to_i) < MAXIMUM_PASSWORD_ATTEMPTS
@@ -157,12 +164,50 @@ module Applications
         # This function will be called when the user wants to set the password
         #   # First, the current password must be given and then a new password can be set
         def set_password
-            is_new_session = @requet["session"]["new"]
+            is_new_session = @request["session"]["new"]
             if is_new_session
                 message = "To reset your password, you must first tell me the current password."
-                build_response(message)
+                build_response( message,
+                                {"intent" => "AskPassword", "tries" => 1, "original_intent" => "SetPassword"},
+                                false
+                              )
+            else
+                new_password = @request["request"]["intent"]["slots"]["number_sequence"]["value"]
+                if @request["session"]["attributes"]["confirm"]
+                    # Check old password
+                    if @request["session"]["attributes"]["new_password"] == new_password
+                        query_database( "UPDATE #{USER_INFORMATION} SET password=#{new_password}" )
+                        build_response( "The password has been changed!" )
+                    else
+                        build_response( "The password confirmation was invalid. Restart the process to try again." )
+                    end
+                else
+                    # Confirm the password once
+                    build_response( "Please confirm the password",
+                                {"intent" => "SetPassword", "new_password" => new_password, "confirm" => true},
+                                false)
             end
         end # set_password
+        
+        # last_event
+        #   # This intent will handle getting information about the last logged event in the database
+        def last_event
+            # Default to saying that there has not been any event yet
+            response = query_database( "SELECT * FROM #{SENSOR_STATUS} WHERE enabled=1 ORDER BY updated_time DESC LIMIT 1" ).entries.first
+            message = "The system is disarmed or no sensor has had an event change"
+            if !response.nil?
+                sensor_type = response["type"]
+                sensor_status = response["status"]
+                case sensor_type
+                when "window"
+                    message = sensor_status == 0 ? "The window was just closed" : "The window was just opened"
+                when "door"
+                    message = sensor_status == 0 ? "The door was just closed" : "The door was just closed"
+                when "smoke"
+                    message = sensor_status == 0 ? "The smoke alarm just turned off" : "The smoke alarm just turned on"
+                end
+            build_response( message )
+        end # last_event
         
         # manage_emergency_contact
         # This function adds, removes, emergency contacts from the database
