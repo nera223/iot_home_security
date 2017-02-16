@@ -142,7 +142,8 @@ module Applications
                                                    false)
                     else
                         response = disable_system # return statement in this method
-                    Alarm.new( @db_client )
+                        Alairm.new( @db_client )
+                    end
                     return response
                 elsif (tries = @request["session"]["attributes"]["tries"].to_i) < MAXIMUM_PASSWORD_ATTEMPTS
                     # The pasword was not correct, so ask again until the number of tries has been exceeded
@@ -186,6 +187,7 @@ module Applications
                     build_response( "Please confirm the password",
                                 {"intent" => "SetPassword", "new_password" => new_password, "confirm" => true},
                                 false)
+                end
             end
         end # set_password
         
@@ -206,6 +208,7 @@ module Applications
                 when "smoke"
                     message = sensor_status == 0 ? "The smoke alarm just turned off" : "The smoke alarm just turned on"
                 end
+            end
             build_response( message )
         end # last_event
         
