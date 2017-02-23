@@ -33,21 +33,20 @@ module Applications
             #TODO change this to be more random so multiple config files can exist
             config_file = "email_config.txt"
             File.open( File.join( CONFIG_PATH, config_file ), "w" ) do |f|
-                f.puts "First, #{first_name}\n"
-                f.puts "Last, #{last_name}\n"
-                f.puts "Email, #{email}\n"
-                f.puts "Phone, #{phone}\n"
-                f.puts "Sensor, #{@sensors.join(", ")}\n"
-                f.puts "Message, #{message}\n"
-                f.puts "Photo, #{photo_path}\n" if !photo_path.nil? && !photo_path.empty?
-                f.puts "Livestream, #{LIVESTREAM_URL}\n"
+                f.puts "#{first_name} #{last_name}\n"
+                f.puts "#{phone}@txt.att.net\n"
+                f.puts "#{email}\n"
+                f.puts "#{@sensors.join(", ")}\n"
+                f.puts "#{message}\n"
+                #f.puts "Photo, #{photo_path}\n" if !photo_path.nil? && !photo_path.empty?
+                #f.puts "Livestream, #{LIVESTREAM_URL}\n"
             end
         end # generate_text_file
         
         # call_email_script
         def call_email_script
             # This needs to be run as a background process because sending the email could take some time
-            #exec("#{EMAIL_CONTROL_FILE} start")
+            #`#{EMAIL_CONTROL_FILE} start`
         end # call_email_script
         
         # fetch_photo_path

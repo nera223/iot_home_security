@@ -1,7 +1,5 @@
-First, Michael
-Last, Road
-Email, ole.wendroth@gmail.com
-Phone, 7492861485
-Sensor, door
-Message, An alarm was triggered at your home for the door sensor.
-Livestream, securiotech.owendroth.com:304
+Nathan Test
+8597534556@txt.att.net
+ole.wendroth@gmail.com
+door
+An alarm was triggered at your home for the door sensor.

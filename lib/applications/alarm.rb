@@ -54,7 +54,7 @@ module Applications
             puts "SPEAKER OFF"
             # The daemons gem will handle the stopping of the 
             #   # audio file playing process
-            #exec("#{SOUND_CONTROL_FILE} stop")
+            `#{SOUND_CONTROL_FILE} stop`
         end # turn_off_speaker
         
         # turn_on_speaker
@@ -65,7 +65,7 @@ module Applications
             # Call the ruby script
             #TODO If already running, the script returns an error internally,
             #   # you should clean this up!
-            #exec("#{SOUND_CONTROL_FILE} start")
+            `#{SOUND_CONTROL_FILE} start`
         end # turn_on_speaker
     end # class Alarm
 end # module Applications

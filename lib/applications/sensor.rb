@@ -39,7 +39,7 @@ module Applications
         #   # Also, retrieve the battery level to update that in the system
         def determine_sensor( request )
             # Update database status of appropriate sensor
-            sensor_mac      = request["MAC"]
+            sensor_mac      = request["mac"]
             sensor_status   = request["status"]
             sensor_battery  = request["battery"] # in mV for now but must be a percentage later on
             sensor_type     = request["type"]
@@ -77,7 +77,7 @@ module Applications
         def request_valid?( request )
             # Request must contain status update, mac address, sensor type
             #TODO ONLY WORKS FOR DOOR SENSOR RIGHT NOW
-            required_keys = ["MAC", "status", "battery", "type"]
+            required_keys = ["mac", "status", "battery", "type"]
             required_keys.each do |key|
                 if !request.has_key?(key)
                     return false

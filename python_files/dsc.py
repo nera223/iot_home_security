@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 from bluepy.btle import *
 import json
@@ -10,21 +12,13 @@ import pymysql
 parser = argparse.ArgumentParser(description="Scan or connect to BLE devices. "
 			"Input file CONNECT required for connect functionality.")
 
+#Only one argument right now, but leaving argument parsing in case more are added. Will remove if not.
+
 #argument '-s'
 #	1. Triggers BLE scan
 #	2. Analyzes advertising data to determine if the device is a securiotech one
 #	3. If yes to (2), the MAC address is written to MySQL table 'scanned_macs'
 parser.add_argument('-s', '--scan', help='Scan', action='store_true')
-
-#argument '-c' attempts to connect
-#	1. Fetches list of MAC addresses to try from MySQL table 'scanned_macs'
-#	2. For each MAC address, attempts to create a Peripheral object (involves connecting)
-#	3. If connection succeeds, a Delegate object is created for the device
-#	4. Notification characteristics (0x2b AKA 43) are toggled for each to enable sensor notifications
-#	5. Waits for notifications to roll in, which are handled by callbacks in the bluepy API (_getResp)
-#		to handleNotification method of Delegate
-#	6. ??? TODO
-parser.add_argument('-c', '--connect', help='Connect. (can run with -s argument to scan and connect)', action='store_true')
 
 args = parser.parse_args()
 
@@ -32,24 +26,60 @@ args = parser.parse_args()
 #	Used to transfer data to/from BLE devices. Each device connection requires a Delegate instance.
 class Delegate(DefaultDelegate):
 		#Initialize with MAC address to help differentiate notifs from different peripherals
+		# TODO: MAC arg to be removed when finalized, design changed
 		def __init__(self, MAC):
 			DefaultDelegate.__init__(self)
 			self.MAC = MAC
 
 		#Remembers whether advertising data is unique or a repeat detection
 		def handleDiscovery(self, dev, isNewDev, isNewData):
-			print("test spam");
 			if isNewDev:
 				print("Discovered device", dev.addr)
 				scanner.stop()
-				test = Peripheral(dev.addr, "public", 0)
-				#print(test.getDescriptors(43,43)) # don't need just testing conn
-				#test.withDelegate(Delegate(dev.addr)) #don't need
-				test.disconnect()
-				scanner.clear()
+				
+				#probably don't need to loop through all adv data to retrieve this.. but it doesn't seem to matter
+				for i in range(len(dev.getScanData())):
+					if (dev.getScanData()[i][0] == 255) & (dev.getScanData()[i][2] == 'ec9cd9c32aedd07f7061'):
+						#iscompatible = True
+						Device = Peripheral(dev.addr, "public", 0)
+						SensorStatus = Device.readCharacteristic(0x0012)
+						Voltage = Device.readCharacteristic(0x0017)
+						SensorType = Device.readCharacteristic(0x0003)
+						
+						Device.disconnect() #keep this line called ASAP
+						
+						#Format data
+						Mac = dev.addr
+						SensorStatus = int.from_bytes(SensorStatus, byteorder='big')
+						Voltage = int.from_bytes(Voltage, byteorder='little')
+						SensorType = SensorType.decode("utf-8")
+						
+						#form and send json req
+						data = {"mac" : Mac , "type" : SensorType , "status" : SensorStatus , "battery" : Voltage}
+						data_json = json.dumps(data).encode('utf8')
+						headers = {'Content-type' : 'application/json'}
+						host = "http://0.0.0.0:3000/sensor"
+						req = urllib.request.Request(host, data=data_json, headers=headers)
+						try:
+							response_stream = urllib.request.urlopen(req)
+							response = response_stream.read()
+							print("JSON Response: ", response)
+						except BadStatusLine:
+							pass
+						
+						print("Compatible Device Interaction: ", Mac)
+						print("Status: ", SensorStatus)
+						print("Voltage: ", Voltage, " (mV)")
+						print("Type: ", SensorType)
+						
+						
+						scanner.clear()
+					
+				
 				scanner.start()
-				#This is the jankiest thing possible
-				print("it worked!")
+				
+				#This all is the jankiest thing.. love it
+				
 				
 				
 			elif isNewData:
@@ -58,81 +88,28 @@ class Delegate(DefaultDelegate):
 		#Called by bluepy whenever notification is received (asynchronous)
 		#	Used to act on any and all data transmitted from peripherals
 		def handleNotification(self, cHandle, data):
-				#TODO code here to process handle data
 
-				#Not yet ready
-				# data = {"status" : 0 , "MAC" : "12.34.45..."}
-				# data_json = json.dumps(data).encode('utf8')
-				# headers = {'Content-type' : 'application/json'}
-				# host = "http://0.0.0.0:3000/sensor"
-
-				# req = urllib.request.Request(host, data=data_json, headers=headers)
-				# response_stream = urllib.request.urlopen(req)
-				# response = response_stream.read()
-
-				# print(response)
-
-				stdata = ' '
-				for i in range(0, len(data)):
-				        stdata = ' '.join((stdata, str(data[i])))
-				print(self.MAC, ": ", cHandle, ": ", stdata)
+				pass
+				# stdata = ' '
+				# for i in range(0, len(data)):
+				        # stdata = ' '.join((stdata, str(data[i])))
+				# print(self.MAC, ": ", cHandle, ": ", stdata)
 
 if (args.scan):
 	scanner = Scanner().withDelegate(Delegate(""))
-	#devices = scanner.scan(5.0)
-	scanner.clear()
-	scanner.start()
-	scanner.process(15)
-	#scanner.stop()
-	
-	print("it actually works")
-	
-if (args.connect):
-
-	#Collects MAC addresses within scanned_macs table
-	db = pymysql.connect(host="localhost",user="iot", password="securiotech", db="system")
-	c=db.cursor()
-	c.execute("SELECT mac FROM scanned_macs")
-	MAClist=c.fetchall()
-	db.close()
-
-	Sensors = []
-	Characteristics = []
-	j = 0;
-	
-	for i in range(len(MAClist)):
-	
+	while(1):
+		#devices = scanner.scan(5.0)
+		scanner.clear()
+		scanner.start()
+		scanner.process(1800)
 		try:
-			print("Attempting connection to %s" % MAClist[i][0])
-			
-			#Connection is attempted during Peripheral object construction
-			Sensors.append(Peripheral(MAClist[i][0], "public", 0))
-			
-			#References a Delegate object to the Peripheral
-			Sensors[j].withDelegate(Delegate(MAClist[i][0]))
-			
-		#BTLEException is thrown if Peripheral constructor fails in connection
+			scanner.stop()
 		except BTLEException:
-			print("Could not find connection to %s. Verify device advertising or scan again." % MAClist[i][0])
-			continue
-
-		#Technically 43 (0x2b) is 'descriptor' on eval board.
-		#Since nobody uses descriptors, API is janky with them. Must read as descriptor
-		#	but write as a characteristic.
-		#TODO: Make 'firmware' code in actual sensors so that notify toggle is char, not desc
-		Characteristics.append(Sensors[j].getDescriptors(43, 43)[0])
-
-		#Enable notifications on each Peripheral
-		Sensors[j].writeCharacteristic(Characteristics[j].handle, (1).to_bytes(1, byteorder='big'), True)
-		print("Connection to %s successful" % MAClist[i][0])
-		j += 1
-
-	while True:
+			print("scanner.stop threw a BTLEException, if you see this and code didn't crash- good")
+			#this delay can bite, if the stars align and a remote device right as this unlucky thing happens
+			#chances are should be very small though, especially with large process time.
+			time.sleep(.5)
+			scanner.stop()
+			
 	
-		#Maybe find a better way to do this? I think this works always though
-		#(yes even with multiple peripherals)
-		if Sensors[0].waitForNotifications(1.0):
-			#handleNotification() was called
-			continue
-		print("...")
 
