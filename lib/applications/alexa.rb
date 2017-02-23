@@ -94,19 +94,21 @@ module Applications
             raise "intent not defined in code on live session!" if intent.nil?
             case intent
             when "DisableSystem"
-                response = disable_system
+                response = ask_password( "disable_system" )
             when "EnableSystem"
                 response = enable_system
             when "DisableSensor"
-                response = disable_sensor
+                response = ask_password( "disable_sensor", true )
+            when "DismissAlarm"
+                response = ask_password( "dismiss" )
             when "EnableSensor"
                 response = enable_sensor
+            when "AskPassword"
+                response = ask_password
             when "SendHelp"
                 response = send_help
             when "EmergencyContact"
                 response = manage_emergency_contact
-			when "AskPassword"
-				response = ask_password
             when "SetPassword"
                 response = set_password
             when "LastEvent"
@@ -123,14 +125,24 @@ module Applications
 		# ask_password
 		# This function will be invoked when the user asks to turn off the alarm
 		# 	# Must prompt for the password
-		def ask_password
+		def ask_password( user_action=nil, sensor_set=false )
+            if user_action.nil?
+                user_action = @request["session"]["attributes"]["user_action"]
+            end
+            if sensor_set
+                sensor_type = @request["request"]["intent"]["slots"]["Sensor"]["value"]
+            elsif user_action == "disable_sensor"
+                sensor_type = @request["session"]["attributes"]["sensor_type"]
+            else
+                sensor_type = "none"
+            end
             is_new_session = @request["session"]["new"]
             if is_new_session
                 # The user has just requested to turn off the alarm,
                 #	# you must ask for the numeric password
                 message = "What is the password?"
                 return build_response(message,
-                                      {"intent" => "AskPassword", "tries" => 1},
+                                      {"intent" => "AskPassword", "user_action" => user_action, "sensor_type" => sensor_type, "tries" => 1},
                                       false)
             else # the session is not new
                 # Determine if the password given was correct
@@ -138,18 +150,26 @@ module Applications
                 if @request["request"]["intent"]["slots"]["number_sequence"]["value"] == correct_password
                     if @request["session"]["attributes"].has_key?( "original_intent" )
                         response = build_response( "Okay. What would you like your new numeric password to be?",
-                                                   {"intent" => "SetPassword", "old_password" => correct_password, "confirm" => false},
+                                                   {"intent" => "SetPassword", "user_action" => user_action, "sensor_type" => sensor_type, "old_password" => correct_password, "confirm" => false},
                                                    false)
                     else
-                        response = disable_system # return statement in this method
-                        Alairm.new( @db_client )
+                        case user_action
+                        when "dismiss" 
+                            response = dismiss_alarm
+                        when "disable_sensor"
+                            response = disable_sensor( sensor_type )
+                        when "disable_system"
+                            response = disable_system
+                        else
+                            response = build_response( "Developer forgot to code this ask password user action" )
+                        end
                     end
                     return response
                 elsif (tries = @request["session"]["attributes"]["tries"].to_i) < MAXIMUM_PASSWORD_ATTEMPTS
                     # The pasword was not correct, so ask again until the number of tries has been exceeded
                     message = "The password was not correct. Try again."
                     return build_response(message,
-                                   {"intent" => "AskPassword", "tries" => tries + 1},
+                                   {"intent" => "AskPassword", "user_action" => user_action, "sensor_type" => sensor_type, "tries" => tries + 1},
                                    false)
                 else
                     # You have run out of tries so you cannot turn off the alarm
@@ -385,24 +405,37 @@ module Applications
             response = query_database("SELECT * FROM #{EMERGENCY_CONTACT}")
             response.entries
         end # get_emergency_contact
+        
+        # dismiss_alarm
+        def dismiss_alarm
+            message = "Okay, ignoring this alarm"
+            query_database( "UPDATE #{SENSOR_STATUS} SET dismiss=1 WHERE status=1" )
+            # Update the alarm condition
+            Alarm.new( @db_client )
+            build_response( message )
+        end # dismiss_alarm
 
         def disable_system
             message = "Okay, deactivating the alarm"
             query_database( "UPDATE #{SENSOR_STATUS} SET enabled=0" )
+            Alarm.new( @db_client )
             build_response( message )
         end
 
         def enable_system
             message = "Okay, I'm going to activate the alarm"
-            query_database( "UPDATE #{SENSOR_STATUS} SET enabled=1")
+            query_database( "UPDATE #{SENSOR_STATUS} SET enabled=1, dismiss=0")
             build_response( message )
         end
 
-        def disable_sensor
-            sensor_type = @request["request"]["intent"]["slots"]["Sensor"]["value"]
+        def disable_sensor( sensor_type )
+            if sensor_type == "none"
+                raise "The sensor type was not set but should have been"
+            end
             message = "Alright, deactivating the #{sensor_type} sensor"
             #TODO The online interface needs to be able to understand the different sensor names
             query_database( "UPDATE #{SENSOR_STATUS} SET enabled='0' WHERE name='#{sensor_type}'" )
+            Alarm.new( @db_client )
             build_response( message )
         end
 

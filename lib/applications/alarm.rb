@@ -26,9 +26,9 @@ module Applications
                 # Logic to determine if alarm should be on or not
                 current_sensor_status = get_sensor_statuses
                 current_sensor_status.each do |sensor|
-                    #NOTE this is a simplified version of the code for now
                     #TODO need to add proximity code here
-                    if sensor["enabled"] == 1 && sensor["status"] == 1
+                    # IF Sensor is ENABLED AND Sensor is NOT 0 AND Sensor is not in a dismissed state
+                    if sensor["enabled"] == 1 && sensor["status"] != 0 && sensor["dismiss"] == 0
                         alarm_sensors << sensor["type"]
                     end
                 end
@@ -37,6 +37,7 @@ module Applications
                 turn_off_speaker
             else
                 turn_on_speaker
+                #TODO Send this only once
                 Notification.new( @db_client, alarm_sensors )
             end
             
@@ -44,7 +45,7 @@ module Applications
 
         # get_sensor_statuses
         def get_sensor_statuses
-            response = @db_client.query( "SELECT name,status,enabled,type FROM #{SENSOR_STATUS}" )
+            response = @db_client.query( "SELECT name,status,enabled,type,dismiss FROM #{SENSOR_STATUS}" )
             return response.entries
         end # get_sensor_statuses
         

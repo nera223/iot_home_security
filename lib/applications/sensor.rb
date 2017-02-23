@@ -39,19 +39,45 @@ module Applications
         #   # Also, retrieve the battery level to update that in the system
         def determine_sensor( request )
             # Update database status of appropriate sensor
-            sensor_mac = request["MAC"]
-            sensor_status = request["status"]
-            # Find the sensor in the database
-            # Update the battery life, status, etc.
-            query_database( "UPDATE #{SENSOR_STATUS} SET status='#{sensor_status}' WHERE mac='#{sensor_mac}'" )
+            sensor_mac      = request["MAC"]
+            sensor_status   = request["status"]
+            sensor_battery  = request["battery"] # in mV for now but must be a percentage later on
+            sensor_type     = request["type"]
+            if sensor_exists?( sensor_mac )
+                # Find the sensor in the database
+                # Update the battery life, status, etc.
+                # If the sensor is showing a status greater than 1, update the database. Do not 
+                # update if sensor status is 0 because this will just turn off the alarm
+                if sensor_status > 0
+                    query_database( "UPDATE #{SENSOR_STATUS} SET status=#{sensor_status},battery=#{sensor_battery} WHERE mac='#{sensor_mac}'" )
+                elsif safe_to_reset_sensor?( sensor_mac )
+                    # Only set sensor status back to 0 if the dismiss flag is on or the sensor has been disabled
+                    query_database( "UPDATE #{SENSOR_STATUS} SET status=#{sensor_status},dismiss=0" ) 
+                end
+            else
+                # add the sensor to the database
+                query_database( "INSERT INTO #{SENSOR_STATUS} (name, status, enabled, mac, type, battery) VALUES ('#{sensor_type}','#{sensor_status}',1,'#{sensor_mac}','#{sensor_type}',#{sensor_battery})")
+            end
         end # determine_sensor
+
+        # safe_to_reset_sensor?
+        def safe_to_reset_sensor?( mac )
+            status = query_database( "SELECT enabled,dismiss FROM #{SENSOR_STATUS} WHERE mac='#{mac}'" ).entries.first
+            status["enabled"] == 0 || status["dismiss"] == 1
+        end # safe_to_reset_sensor?
+        
+        # sensor_exists?
+        def sensor_exists?( mac )
+            all_rows = query_database( "SELECT mac FROM #{SENSOR_STATUS}").entries
+            all_rows.map{|entry| entry["mac"]}.member?( mac )
+        end # sensor_exists?
 
         # request_valid?
         # Check the request for all of the necessary information
         def request_valid?( request )
             # Request must contain status update, mac address, sensor type
-            # optional to have battery level for now
-            required_keys = ["MAC", "status"]
+            #TODO ONLY WORKS FOR DOOR SENSOR RIGHT NOW
+            required_keys = ["MAC", "status", "battery", "type"]
             required_keys.each do |key|
                 if !request.has_key?(key)
                     return false
