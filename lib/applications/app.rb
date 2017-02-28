@@ -3,10 +3,11 @@ require 'json'
 require 'daemons'
 
 module Applications
+    ALARM_FILE = "/home/pi/iot_home_security/ALARM_ON"
     class Application
         # The response codes must be sent as part of the response
         GOOD_RESPONSE_CODE  = 200
-        BAD_RESPONSE_CODE   = 502
+        BAD_RESPONSE_CODE   = 502    
         
         # call()
         # Inputs:

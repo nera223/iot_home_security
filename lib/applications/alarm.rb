@@ -36,9 +36,9 @@ module Applications
             if alarm_sensors.empty?
                 turn_off_speaker
             else
-                turn_on_speaker
                 #TODO Send this only once
                 Notification.new( @db_client, alarm_sensors )
+                turn_on_speaker
             end
             
         end # determine_alarm
@@ -54,7 +54,11 @@ module Applications
             puts "SPEAKER OFF"
             # The daemons gem will handle the stopping of the 
             #   # audio file playing process
-            `#{SOUND_CONTROL_FILE} stop`
+            if File.exist?( ALARM_FILE )
+                `#{SOUND_CONTROL_FILE} stop`
+                # Delete file to show that the alarm is on
+                File.delete( ALARM_FILE )
+            end
         end # turn_off_speaker
         
         # turn_on_speaker
@@ -65,7 +69,11 @@ module Applications
             # Call the ruby script
             #TODO If already running, the script returns an error internally,
             #   # you should clean this up!
-            `#{SOUND_CONTROL_FILE} start`
+            if !File.exist?( ALARM_FILE )
+                `#{SOUND_CONTROL_FILE} start`
+                # Create a new file to show that the alarm is on
+                File.open(ALARM_FILE, "w") {}
+            end
         end # turn_on_speaker
     end # class Alarm
 end # module Applications

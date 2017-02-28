@@ -27,30 +27,45 @@ args = parser.parse_args()
 class Delegate(DefaultDelegate):
 		#Initialize with MAC address to help differentiate notifs from different peripherals
 		# TODO: MAC arg to be removed when finalized, design changed
-		def __init__(self, MAC):
+		def __init__(self):
 			DefaultDelegate.__init__(self)
-			self.MAC = MAC
+			#self.MAC = MAC
 
 		#Remembers whether advertising data is unique or a repeat detection
 		def handleDiscovery(self, dev, isNewDev, isNewData):
 			if isNewDev:
 				print("Discovered device", dev.addr)
-				scanner.stop()
+				#scanner.stop()
+				try:
+					scanner.stop()
+				except BTLEException:
+					print("scanner.stop threw a BTLEException, if you see this and code didn't crash- good")
+					#this delay can bite, if the stars align and a remote device right as this unlucky thing happens
+					#chances are should be very small though, especially with large process time.
+					time.sleep(.5)
+					scanner.stop()
 				
 				#probably don't need to loop through all adv data to retrieve this.. but it doesn't seem to matter
 				for i in range(len(dev.getScanData())):
 					if (dev.getScanData()[i][0] == 255) & (dev.getScanData()[i][2] == 'ec9cd9c32aedd07f7061'):
 						#iscompatible = True
 						Device = Peripheral(dev.addr, "public", 0)
-						SensorStatus = Device.readCharacteristic(0x0012)
-						Voltage = Device.readCharacteristic(0x0017)
-						SensorType = Device.readCharacteristic(0x0003)
+						Data = Device.readCharacteristic(0x0020)
+						#SensorStatus = Device.readCharacteristic(0x0012)
+						#Voltage = Device.readCharacteristic(0x0017)
+						#SensorType = Device.readCharacteristic(0x0003)
 						
 						Device.disconnect() #keep this line called ASAP
 						
-						#Format data
+						#print(Data)
+						
+						#Format data (python array indexing is soo stupid)
 						Mac = dev.addr
-						SensorStatus = int.from_bytes(SensorStatus, byteorder='big')
+						SensorType = Data[0:4];
+						SensorStatus = Data[4];
+						Voltage = Data[5:7];
+						
+						#SensorStatus = int.from_bytes(SensorStatus, byteorder='little')
 						Voltage = int.from_bytes(Voltage, byteorder='little')
 						SensorType = SensorType.decode("utf-8")
 						
@@ -60,25 +75,25 @@ class Delegate(DefaultDelegate):
 						headers = {'Content-type' : 'application/json'}
 						host = "http://0.0.0.0:3000/sensor"
 						req = urllib.request.Request(host, data=data_json, headers=headers)
-						try:
-							response_stream = urllib.request.urlopen(req)
-							response = response_stream.read()
-							print("JSON Response: ", response)
-						except BadStatusLine:
-							pass
 						
 						print("Compatible Device Interaction: ", Mac)
 						print("Status: ", SensorStatus)
 						print("Voltage: ", Voltage, " (mV)")
 						print("Type: ", SensorType)
+						try:
+							response_stream = urllib.request.urlopen(req)
+							response = response_stream.read()
+							print("JSON Response: ", response.decode('utf-8'))
+						except BadStatusLine:
+							pass
 						
-						
-						scanner.clear()
+						scanner.removeaddr(dev.addr)
+						#scanner.clear()
 					
 				
 				scanner.start()
 				
-				#This all is the jankiest thing.. love it
+				
 				
 				
 				
@@ -96,7 +111,7 @@ class Delegate(DefaultDelegate):
 				# print(self.MAC, ": ", cHandle, ": ", stdata)
 
 if (args.scan):
-	scanner = Scanner().withDelegate(Delegate(""))
+	scanner = Scanner().withDelegate(Delegate())
 	while(1):
 		#devices = scanner.scan(5.0)
 		scanner.clear()

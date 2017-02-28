@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-#last update 02/25/17 8:53 am
-import os
 import sys
 import smtplib
 # Import the email modules we'll need
@@ -20,17 +17,16 @@ class Home_owner:
     	email = "somethingat.com "
     	sensor = " "
     	message =" "
-	url     =" "
+
 
 
 	def loadFromFile(self):
-            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"email_config.txt")
-            f = open(config_path, "r")
-            self.name = f.readline().rstrip()
-            self.no =   f.readline().rstrip()
-            self.email = f.readline().rstrip()
-            self.sensor = f.readline().rstrip()
-            self.message= f.readline().rstrip()
+       		f = open("./ahmed.txt", "r")
+        	self.name = f.readline().rstrip()
+        	self.no =   f.readline().rstrip()
+        	self.email = f.readline().rstrip()
+        	self.sensor = f.readline().rstrip()
+        	self.message= f.readline().rstrip()
 #Initiationg a variable
 theHome_owner = None
 
@@ -65,7 +61,7 @@ message['Subject'] = "Automatic Message Notification "
 #it was Email or SMS; this why it must
 #be reasonable in lenght .
 body = theHome_owner.message
-#body= theHome_owner.url
+
 sensor_type=theHome_owner.sensor
 #Later,when we have our camera set, we can
 #add this attachment to the message.
@@ -75,8 +71,7 @@ message.attach(MIMEText(sensor_type, 'plain'))
 
 filename = "Camera Should automatically name this "
 #It could be a picutre or a link to the camera
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"email_config.txt")
-attachment = open(config_path, "rb")
+attachment = open("./ahmed.txt", "rb")
 # To enable the user to open the attachment
 part = MIMEBase('application', 'octet-stream')
 
@@ -84,7 +79,7 @@ part.set_payload((attachment).read())
 encoders.encode_base64(part)
 part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
 
-#message.attach(part)
+message.attach(part)
 #Accessing the server from  port:587 or :465
 server = smtplib.SMTP('smtp.gmail.com', 587)
 server.starttls()
