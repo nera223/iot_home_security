@@ -12,7 +12,8 @@ module Applications
             #   # and another where sensor statuses are being updated
             if request_valid?( request )
                 # Save path and description to database
-                
+                # The timestamp will be automatically updated
+                query_database( "INSERT INTO #{MEDIA_ARCHIVE}} (path, description) VALUES ('#{request["path"]}', '#{request["description"]}')")
             else
                 return [BAD_RESPONSE_CODE, 
                         {'Content-Type' => 'text/plain'},

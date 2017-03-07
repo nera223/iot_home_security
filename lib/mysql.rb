@@ -5,8 +5,9 @@ SENSOR_STATUS   = "sensor_status"
 # This table will hold information of the information for the emergency contact
 EMERGENCY_CONTACT = "emergency_contacts"
 # Holds information for the primary user and other system information like the alarm password
-USER_INFORMATION = "user_information"
-
+ALEXA_INFORMATION = "alexa"
+# Holds information for the media archive. Stores path information on the HDD and a description, along with a timestamp
+MEDIA_ARCHIVE = "media"
 
 class Database
 

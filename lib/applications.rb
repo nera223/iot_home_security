@@ -8,6 +8,7 @@ module Applications
     autoload :Application,  'applications/app'
     autoload :Alexa,        'applications/alexa'
     autoload :Sensor,       'applications/sensor'
+    autoload :Camera,       'applications/camera'
     autoload :Alarm,        'applications/alarm'
     autoload :Notification, 'applications/notifications'
     autoload :Database,     'mysql'

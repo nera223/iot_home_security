@@ -41,6 +41,9 @@ module Framework
                 map '/sensor' do
                     run Applications::Sensor.new
                 end
+                map '/camera' do
+                    run Applications::Camera.new
+                end
             end
         end
     

@@ -197,7 +197,7 @@ module Applications
                 if @request["session"]["attributes"]["confirm"]
                     # Check old password
                     if @request["session"]["attributes"]["new_password"] == new_password
-                        query_database( "UPDATE #{USER_INFORMATION} SET password=#{new_password}" )
+                        query_database( "UPDATE #{ALEXA_INFORMATION} SET password=#{new_password}" )
                         build_response( "The password has been changed!" )
                     else
                         build_response( "The password confirmation was invalid. Restart the process to try again." )
@@ -395,7 +395,7 @@ module Applications
         # get_password_from_database
         def get_password_from_database
             # There should only be one row in the table so only one password
-            response = query_database("SELECT password FROM #{USER_INFORMATION}")
+            response = query_database("SELECT password FROM #{ALEXA_INFORMATION}")
             response.entries.first["password"]
         end # get_password_from_database
         
