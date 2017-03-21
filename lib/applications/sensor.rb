@@ -39,7 +39,8 @@ module Applications
         #   # Also, retrieve the battery level to update that in the system
         def determine_sensor( request )
             # Update database status of appropriate sensor
-            sensor_mac      = request["mac"]
+            # The MAC address should be uppercase!
+            sensor_mac      = request["mac"].upcase
             sensor_status   = request["status"]
             sensor_battery  = request["battery"] # in mV for now but must be a percentage later on
             sensor_type     = request["type"]
@@ -52,7 +53,7 @@ module Applications
                     query_database( "UPDATE #{SENSOR_STATUS} SET status=#{sensor_status},battery=#{sensor_battery} WHERE mac='#{sensor_mac}'" )
                 elsif safe_to_reset_sensor?( sensor_mac )
                     # Only set sensor status back to 0 if the dismiss flag is on or the sensor has been disabled
-                    query_database( "UPDATE #{SENSOR_STATUS} SET status=#{sensor_status},dismiss=0" ) 
+                    query_database( "UPDATE #{SENSOR_STATUS} SET status=#{sensor_status},dismiss=0" )
                 end
             else
                 # add the sensor to the database
@@ -69,7 +70,7 @@ module Applications
         # sensor_exists?
         def sensor_exists?( mac )
             all_rows = query_database( "SELECT mac FROM #{SENSOR_STATUS}").entries
-            all_rows.map{|entry| entry["mac"]}.member?( mac )
+            all_rows.map{|entry| entry["mac"]}.member?( mac.upcase )
         end # sensor_exists?
 
         # request_valid?
@@ -85,17 +86,6 @@ module Applications
             end
             return true
         end # request_valid?
-
-        # sensor_registered?
-        # Check if the sensor's MAC address exists in the database
-        #   # May have to do this if there is a possibility of a sensor
-        #   # sending a signal to the app server that has not gone through
-        #   # the setup process.
-        def sensor_registered?( sensor_mac, sensor_type )
-            # Returns true if sensor mac and type exist in the database
-            # Check if it exists in the database
-            #sensor_dump = query_database("SELECT sensor_type, sensor_mac FROM #{SENSOR_STATUS}")
-        end # sensor_registered?
 
     end # Sensor
 end

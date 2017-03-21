@@ -28,7 +28,7 @@ module Applications
                 current_sensor_status.each do |sensor|
                     #TODO need to add proximity code here
                     # IF Sensor is ENABLED AND Sensor is NOT 0 AND Sensor is not in a dismissed state
-                    if sensor["enabled"] == 1 && sensor["status"] != 0 && sensor["dismiss"] == 0
+                    if (sensor["enabled"] == 1) && (sensor["status"] != 0) && (sensor["dismiss"] == 0)
                         alarm_sensors << sensor["type"]
                     end
                 end
@@ -36,16 +36,29 @@ module Applications
             if alarm_sensors.empty?
                 turn_off_speaker
             else
-                #TODO Send this only once
                 Notification.new( @db_client, alarm_sensors )
-                turn_on_speaker
+                # Delay iff the door sensor is active
+                delay = alarm_sensors.size == 1 && alarm_sensors.first == "door" && 
+                if !currently_leaving
+                    turn_on_speaker( delay )
+                end
             end
-            
         end # determine_alarm
+        
+        # currently_leaving
+        def currently_leaving
+            response = @db_client.query( "SELECT TIMESTAMPDIFF(SECOND,updated_time,CURRENT_TIMESTAMP()) AS time_diff, mode FROM #{ALEXA_INFORMATION}" )
+            if response.first["time_diff"] < 60 && response.first["mode"] == "leaving"
+                return true
+            end
+            # If after the 60 seconds, set status to "left" to indicate that the user has been gone for more than 60 seconds
+            @db_client.query( "UPDATE #{ALEXA_INFORMATION} SET mode='left'" )
+            return false
+        end # currently_leaving
 
         # get_sensor_statuses
         def get_sensor_statuses
-            response = @db_client.query( "SELECT name,status,enabled,type,dismiss FROM #{SENSOR_STATUS}" )
+            response = @db_client.query( "SELECT name,status,updated_time,enabled,type,dismiss FROM #{SENSOR_STATUS}" )
             return response.entries
         end # get_sensor_statuses
         
@@ -62,7 +75,7 @@ module Applications
         end # turn_off_speaker
         
         # turn_on_speaker
-        def turn_on_speaker
+        def turn_on_speaker( delay=false )
             puts "SPEAKER ON"
             # The daemons gem will handle the starting of the 
             #   # audio file playing process
@@ -70,7 +83,12 @@ module Applications
             #TODO If already running, the script returns an error internally,
             #   # you should clean this up!
             if !File.exist?( ALARM_FILE )
-                `#{SOUND_CONTROL_FILE} start`
+                if delay
+                    # call the sound_control file with delay argument
+                    `#{SOUND_CONTROL_FILE} start -- delay` 
+                else
+                    `#{SOUND_CONTROL_FILE} start`
+                end
                 # Create a new file to show that the alarm is on
                 File.open(ALARM_FILE, "w") {}
             end

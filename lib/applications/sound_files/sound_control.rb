@@ -5,6 +5,7 @@
 #   # necessary.
 require 'daemons'
 
+# Delay argument can be passed to this file that will be executed with the sound_file call
 options = {
     :log_output => true
 }

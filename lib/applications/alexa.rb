@@ -113,11 +113,15 @@ module Applications
                 response = set_password
             when "LastEvent"
                 response = last_event
+            when "ImHome"
+                response = ask_password( "home" )
+            when "ImLeaving"
+                response = leaving_mode
             else
-                response = build_response("You forgot to code this intent")
+                response = build_response("Debug Message. You forgot to code this intent")
             end
             if response.nil?
-                response = build_response("I did not understand your request")
+                response = build_response("Debug Message. Your code messed up")
             end
             return response
         end # respond_to_intent
@@ -160,6 +164,8 @@ module Applications
                             response = disable_sensor( sensor_type )
                         when "disable_system"
                             response = disable_system
+                        when "home"
+                            response = home_mode
                         else
                             response = build_response( "Developer forgot to code this ask password user action" )
                         end
@@ -405,6 +411,26 @@ module Applications
             response = query_database("SELECT * FROM #{EMERGENCY_CONTACT}")
             response.entries
         end # get_emergency_contact
+        
+        # leaving_mode
+        def leaving_mode
+            message = "Goodbye, I will arm the system in one minute."
+            # First arm the system entirely
+            query_database( "UPDATE #{SENSOR_STATUS} SET enabled=1, dismiss=0")
+            # Put the system in "leave" mode
+            query_database( "UPDATE #{ALEXA_INFORMATION} SET mode='leaving'" )
+            build_response( message )
+        end # leaving_mode
+        
+        # home_mode
+        def home_mode
+            # This function does the same that dismiss_alarm does, except a more useful reply from Alexa
+            message = "Welcome back. I have turned off the alarm"
+            query_database( "UPDATE #{SENSOR_STATUS} SET dismiss=1 WHERE status=1" )
+            query_database( "UPDATE #{ALEXA_INFORMATION} SET mode='home'" )
+            Alarm.new( @db_client )
+            build_response( message )
+        end # home_mode
         
         # dismiss_alarm
         def dismiss_alarm
