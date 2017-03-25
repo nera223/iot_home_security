@@ -8,6 +8,8 @@ EMERGENCY_CONTACT = "emergency_contacts"
 ALEXA_INFORMATION = "alexa"
 # Holds information for the media archive. Stores path information on the HDD and a description, along with a timestamp
 MEDIA_ARCHIVE = "media"
+# Holds an event log for sensor alarm states
+EVENT_LOG = "sensor_history"
 
 class Database
 

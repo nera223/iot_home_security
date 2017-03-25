@@ -40,6 +40,7 @@ module Applications
                 # Delay iff the door sensor is active
                 delay = alarm_sensors.size == 1 && alarm_sensors.first == "door" && 
                 if !currently_leaving
+                    log_event( alarm_sensors )
                     turn_on_speaker( delay )
                 end
             end
@@ -61,6 +62,22 @@ module Applications
             response = @db_client.query( "SELECT name,status,updated_time,enabled,type,dismiss FROM #{SENSOR_STATUS}" )
             return response.entries
         end # get_sensor_statuses
+        
+        # log_event
+        def log_event( sensor_list )
+            sensor_list.each do |sensor|
+                description = "No description available for this sensor"
+                case sensor
+                when "door"
+                    description = "Door opened"
+                when "window"
+                    description = "Window was opened from outside"
+                when "smoke"
+                    description = "Smoke alarm detected some smoke"
+                end
+                @db_client.query( "INSERT INTO #{EVENT_LOG} (type, name, description) VALUES ('#{sensor}', '#{sensor}', #{description})" )
+            end
+        end # log_event
         
         # turn_off_speaker
         def turn_off_speaker

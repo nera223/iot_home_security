@@ -42,8 +42,8 @@ module Applications
             # The MAC address should be uppercase!
             sensor_mac      = request["mac"].upcase
             sensor_status   = request["status"]
-            sensor_battery  = request["battery"] # in mV for now but must be a percentage later on
             sensor_type     = request["type"]
+            sensor_battery  = get_battery_percentage( request["battery"], sensor_type ) # in mV for now but must be a percentage later on
             if sensor_exists?( sensor_mac )
                 # Find the sensor in the database
                 # Update the battery life, status, etc.
@@ -60,6 +60,12 @@ module Applications
                 query_database( "INSERT INTO #{SENSOR_STATUS} (name, status, enabled, mac, type, battery) VALUES ('#{sensor_type}','#{sensor_status}',1,'#{sensor_mac}','#{sensor_type}',#{sensor_battery})")
             end
         end # determine_sensor
+        
+        # get_battery_percentage
+        def get_battery_percentage( battery_level, sensor_type )
+            # Insert code here to convert 
+            return "100"
+        end # get_battery_percentage
 
         # safe_to_reset_sensor?
         def safe_to_reset_sensor?( mac )
