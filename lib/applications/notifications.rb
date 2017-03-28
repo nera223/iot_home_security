@@ -46,7 +46,8 @@ module Applications
         # call_email_script
         def call_email_script
             # This needs to be run as a background process because sending the email could take some time
-            if !File.exist?( ALARM_FILE )
+            #if !File.exist?( ALARM_FILE )
+            if !Applications.alarm_on?
                 `ruby #{EMAIL_CONTROL_FILE} start`
             end
         end # call_email_script

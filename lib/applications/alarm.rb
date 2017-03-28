@@ -38,9 +38,9 @@ module Applications
             else
                 Notification.new( @db_client, alarm_sensors )
                 # Delay iff the door sensor is active
-                delay = alarm_sensors.size == 1 && alarm_sensors.first == "door" && 
+                delay = ( alarm_sensors.size == 1 && alarm_sensors.first == "door" )
                 if !currently_leaving
-                    log_event( alarm_sensors )
+                    log_event( alarm_sensors ) if !Applications.alarm_on?
                     turn_on_speaker( delay )
                 end
             end
@@ -75,7 +75,7 @@ module Applications
                 when "smoke"
                     description = "Smoke alarm detected some smoke"
                 end
-                @db_client.query( "INSERT INTO #{EVENT_LOG} (type, name, description) VALUES ('#{sensor}', '#{sensor}', #{description})" )
+                @db_client.query( "INSERT INTO #{EVENT_LOG} (type, name, description) VALUES ('#{sensor}', '#{sensor}', '#{description}')" )
             end
         end # log_event
         
@@ -84,10 +84,12 @@ module Applications
             puts "SPEAKER OFF"
             # The daemons gem will handle the stopping of the 
             #   # audio file playing process
-            if File.exist?( ALARM_FILE )
+            #if File.exist?( ALARM_FILE )
+            if Applications.alarm_on?
                 `#{SOUND_CONTROL_FILE} stop`
                 # Delete file to show that the alarm is on
-                File.delete( ALARM_FILE )
+                #File.delete( ALARM_FILE )
+                Applications.alarm_off
             end
         end # turn_off_speaker
         
@@ -99,7 +101,8 @@ module Applications
             # Call the ruby script
             #TODO If already running, the script returns an error internally,
             #   # you should clean this up!
-            if !File.exist?( ALARM_FILE )
+            #if !File.exist?( ALARM_FILE )
+            if !Applications.alarm_on?
                 if delay
                     # call the sound_control file with delay argument
                     `#{SOUND_CONTROL_FILE} start -- delay` 
@@ -107,7 +110,8 @@ module Applications
                     `#{SOUND_CONTROL_FILE} start`
                 end
                 # Create a new file to show that the alarm is on
-                File.open(ALARM_FILE, "w") {}
+                #File.open(ALARM_FILE, "w") {}
+                Applications.alarm_on
             end
         end # turn_on_speaker
     end # class Alarm

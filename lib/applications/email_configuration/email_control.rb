@@ -8,7 +8,7 @@
 require 'daemons'
 
 options = {
-    :log_output => true
+    :log_output => false
 }
 email_script = File.join( File.expand_path( File.dirname( __FILE__ ) ), "run_python_script.rb" )
 Daemons.run(email_script, options)

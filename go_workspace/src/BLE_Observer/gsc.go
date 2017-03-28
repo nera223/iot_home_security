@@ -12,7 +12,7 @@ import (
 
 )
 
-var jsonenabled bool = true
+var jsonenabled bool = false
 
 var url string
 
@@ -135,7 +135,7 @@ func main() {
 		fmt.Printf("Device Created. \n")
 	}
 	
-	threads := r.NumCPU()
+	//threads := r.NumCPU()
 	desthreads := 2
 	threads := r.GOMAXPROCS(desthreads)
 	fmt.Println("Limiting to: ", desthreads, " threads from ", threads, " threads.")

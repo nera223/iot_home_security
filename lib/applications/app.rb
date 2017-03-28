@@ -3,7 +3,21 @@ require 'json'
 require 'daemons'
 
 module Applications
-    ALARM_FILE = "/home/pi/iot_home_security/ALARM_ON"
+    # This variable keeps track of the alarm state
+    @@alarm_on = false
+    def self.alarm_on
+        @@alarm_on = true
+    end
+    
+    def self.alarm_off
+        @@alarm_on = false
+    end
+
+    def self.alarm_on?
+        @@alarm_on
+    end
+
+    #ALARM_FILE = "/home/pi/iot_home_security/ALARM_ON"
     class Application
         # The response codes must be sent as part of the response
         GOOD_RESPONSE_CODE  = 200

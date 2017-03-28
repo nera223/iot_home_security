@@ -7,7 +7,7 @@ require 'daemons'
 
 # Delay argument can be passed to this file that will be executed with the sound_file call
 options = {
-    :log_output => true
+    :log_output => false
 }
 sound_file = File.join( File.expand_path( File.dirname( __FILE__ ) ), "play_sound.rb" )
 Daemons.run(sound_file, options)
