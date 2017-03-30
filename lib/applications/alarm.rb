@@ -5,6 +5,11 @@ module Applications
     SOUND_CONTROL_FILE = File.join( File.expand_path( File.dirname(__FILE__) ), 'sound_files', 'sound_control.rb' )
     
     class Alarm
+        # initialize
+        # Description:  Initialize an Alarm class instance
+        # Inputs:       db_client => pass the connection to the MySQL database to avoid recreating connections
+        #               send_help => Option used by Alexa to immediately send an emergency notification
+        # Outputs:      Creates a class instance
         def initialize( db_client, send_help=false )
             # Sending db_client across classes
             @db_client = db_client
@@ -13,7 +18,12 @@ module Applications
 
         private
         
+        
         # determine_alarm
+        # Description:  Turn on or off the external alarm speaker based on values in 
+        #               mostly the database table 'sensor_status"
+        # Inputs:       send_help => boolean to add "alexa" as an alarm sensor
+        # Outputs:      None
         def determine_alarm( send_help )
             alarm_sensors = []
             # This ensures a ONE-TIME alarm start
@@ -47,6 +57,10 @@ module Applications
         end # determine_alarm
         
         # currently_leaving
+        # Description:  Determine if the user has just issued a command to Alexa that
+        #               they will be opening the door soon. (<60s)
+        # Inputs:       None
+        # Outputs:      Boolean
         def currently_leaving
             response = @db_client.query( "SELECT TIMESTAMPDIFF(SECOND,updated_time,CURRENT_TIMESTAMP()) AS time_diff, mode FROM #{ALEXA_INFORMATION}" )
             if response.first["time_diff"] < 60 && response.first["mode"] == "leaving"
@@ -58,12 +72,20 @@ module Applications
         end # currently_leaving
 
         # get_sensor_statuses
+        # Description:  Perform a mySQL query to get all of the sensor status data
+        # Inputs:       None
+        # Outputs:      Array of sensor status rows
         def get_sensor_statuses
             response = @db_client.query( "SELECT name,status,updated_time,enabled,type,dismiss FROM #{SENSOR_STATUS}" )
             return response.entries
         end # get_sensor_statuses
         
         # log_event
+        # Description:  Whenever a sensor is in an alarm state, this needs to be 
+        #               logged to the database, so the user can look up a history
+        #               of past events
+        # Inputs:       A list of sensors that are in an alarm state
+        # Outputs:      None
         def log_event( sensor_list )
             sensor_list.each do |sensor|
                 description = "No description available for this sensor"
@@ -80,6 +102,9 @@ module Applications
         end # log_event
         
         # turn_off_speaker
+        # Description:  This method turns the speaker off (if currently on)
+        # Inputs:       None
+        # Outputs:      None
         def turn_off_speaker
             puts "SPEAKER OFF"
             # The daemons gem will handle the stopping of the 
@@ -94,6 +119,11 @@ module Applications
         end # turn_off_speaker
         
         # turn_on_speaker
+        # Description:  This method turns the speaker on (if currently off)
+        #               The speaker plays a continous sound until it is interrupted
+        # Inputs:       delay => boolean of whether to wait 30 seconds. This is for the
+        #                   case of the door sensor only
+        # Outputs:      None
         def turn_on_speaker( delay=false )
             puts "SPEAKER ON"
             # The daemons gem will handle the starting of the 

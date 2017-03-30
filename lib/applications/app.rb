@@ -4,15 +4,30 @@ require 'daemons'
 
 module Applications
     # This variable keeps track of the alarm state
+    # This is used to keep track of whether or not the alarm sound
+    #   is on, etc.
     @@alarm_on = false
+    
+    # self.alarm_on
+    # Description:  Call this method when the system is in an alarm state
+    # Inputs:       None
+    # Outputs:      None
     def self.alarm_on
         @@alarm_on = true
     end
     
+    # self.alarm_off
+    # Description:  Call this method when the system is not in an alarm state
+    # Inputs:       None
+    # Outputs:      None
     def self.alarm_off
         @@alarm_on = false
     end
 
+    # self.alarm_on?
+    # Description:  Ask the system if it is currently in an alarm state
+    # Inputs:       None
+    # Outputs:      Boolean
     def self.alarm_on?
         @@alarm_on
     end
@@ -49,19 +64,27 @@ module Applications
         end
         
         # These methods will be available to all classes ===========================
+        
         # convert_json_to_hash
+        # Description:  Convert JSON format to Ruby hash
+        # Inputs:       json => string of JSON structure
+        # Outputs:      Hash
         def convert_json_to_hash( json )
             JSON.parse( json["rack.input"].read )
         end # convert_json_to_hash
 
         # convert_hash_to_json
-        # Returns a JSON string
+        # Description:  Convert Hash to JSON format
+        # Inputs:       Hash to be converted
+        # Outputs:      String in JSON format
         def convert_hash_to_json( hash )
             JSON.generate( hash )
         end
 
         # query_database
-        # This method is a wrapper to run a query on a database
+        # Description:  This method is a wrapper to run a query on a database
+        # Inputs:       q => query to run as a string
+        # Outputs:      mySQL response structure
         def query_database( q )
             begin
                 response = @db_client.query( q )
@@ -77,6 +100,9 @@ module Applications
         private
 
         # incoming_request_valid?
+        # Description:  Verify that the JSON request was issued by Amazon
+        # Inputs:       request => Hash of the request
+        # Outputs:      Boolean
         def incoming_request_valid?( request )
             request.has_key?( "CONTENT_TYPE" )
         end # incoming_request_valid?
