@@ -58,7 +58,7 @@ module Applications
                 # Return response to the application server
             else
                 # Respond with 404 if this was accessed by an invalid user
-                response_out = [BAD_RESPONSE_CODE, {'Content-Type' => 'text/plain'}, ["NOT AUTHORIZED"]]
+                response_out = [BAD_RESPONSE_CODE, {'Content-Type' => 'text/plain'}, ["NOT AUTHORIZED\n"]]
             end
             return response_out
         end

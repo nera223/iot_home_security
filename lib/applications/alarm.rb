@@ -10,10 +10,10 @@ module Applications
         # Inputs:       db_client => pass the connection to the MySQL database to avoid recreating connections
         #               send_help => Option used by Alexa to immediately send an emergency notification
         # Outputs:      Creates a class instance
-        def initialize( db_client, send_help=false )
+        def initialize( db_client, send_help=false, sensor_check=false )
             # Sending db_client across classes
             @db_client = db_client
-            determine_alarm( send_help )
+            determine_alarm( send_help, sensor_check )
         end
 
         private
@@ -24,8 +24,9 @@ module Applications
         #               mostly the database table 'sensor_status"
         # Inputs:       send_help => boolean to add "alexa" as an alarm sensor
         # Outputs:      None
-        def determine_alarm( send_help )
+        def determine_alarm( send_help, sensor_check )
             alarm_sensors = []
+            disconnected_sensors = []
             # This ensures a ONE-TIME alarm start
             if send_help
                 alarm_sensors = ["alexa"]
@@ -41,17 +42,22 @@ module Applications
                     if (sensor["enabled"] == 1) && (sensor["status"] != 0) && (sensor["dismiss"] == 0)
                         alarm_sensors << sensor["type"]
                     end
+                    if sensor_check && sensor["verbose"] == "disconnected"
+                        disconnected_sensors << sensor["type"]
+                    end
                 end
             end
             if alarm_sensors.empty?
                 turn_off_speaker
             else
                 Notification.new( @db_client, alarm_sensors )
-                # Delay iff the door sensor is active
-                delay = ( alarm_sensors.size == 1 && alarm_sensors.first == "door" )
-                if !currently_leaving
-                    log_event( alarm_sensors ) if !Applications.alarm_on?
-                    turn_on_speaker( delay )
+                only_door_alarm = ( alarm_sensors.size == 1 && alarm_sensors.first == "door" )
+                if only_door_alarm && !currently_leaving
+                    log_event( alarm_sensors, disconnected_sensors ) if !Applications.alarm_on?
+                    turn_on_speaker( only_door_alarm )
+                elsif !only_door_alarm # Don't care whether you are leaving or not if there are multiple sensors in alarm state
+                    log_event( alarm_sensors, disconnected_sensors ) if !Applications.alarm_on?
+                    turn_on_speaker
                 end
             end
         end # determine_alarm
@@ -62,6 +68,7 @@ module Applications
         # Inputs:       None
         # Outputs:      Boolean
         def currently_leaving
+            # This only gets set by the door sensor in the 'alexa' table
             response = @db_client.query( "SELECT TIMESTAMPDIFF(SECOND,updated_time,CURRENT_TIMESTAMP()) AS time_diff, mode FROM #{ALEXA_INFORMATION}" )
             if response.first["time_diff"] < 60 && response.first["mode"] == "leaving"
                 return true
@@ -76,7 +83,7 @@ module Applications
         # Inputs:       None
         # Outputs:      Array of sensor status rows
         def get_sensor_statuses
-            response = @db_client.query( "SELECT name,status,updated_time,enabled,type,dismiss FROM #{SENSOR_STATUS}" )
+            response = @db_client.query( "SELECT name,status,updated_time,enabled,type,dismiss,verbose FROM #{SENSOR_STATUS}" )
             return response.entries
         end # get_sensor_statuses
         
@@ -86,7 +93,11 @@ module Applications
         #               of past events
         # Inputs:       A list of sensors that are in an alarm state
         # Outputs:      None
-        def log_event( sensor_list )
+        def log_event( sensor_list, disconnected_sensors )
+            disconnected_sensors.each do |sensor|
+                description = "THe hub has not received a signal from this sensor in over 15 minutes"
+                @db_client.query( "INSERT INTO #{EVENT_LOG} (type, name, description) VALUES ('#{sensor}', '#{sensor}', '#{description}')" ) 
+            end
             sensor_list.each do |sensor|
                 description = "No description available for this sensor"
                 case sensor

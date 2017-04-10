@@ -44,6 +44,7 @@ module Applications
             sensor_status   = request["status"]
             sensor_type     = request["type"]
             sensor_battery  = get_battery_percentage( request["battery"], sensor_type ) # in mV for now but must be a percentage later on
+            verbose = get_status_description( sensor_status, sensor_type )
             if sensor_exists?( sensor_mac )
                 # Find the sensor in the database
                 # Update the battery life, status, etc.
@@ -55,11 +56,32 @@ module Applications
                     # Only set sensor status back to 0 if the dismiss flag is on or the sensor has been disabled
                     query_database( "UPDATE #{SENSOR_STATUS} SET status=#{sensor_status},dismiss=0" )
                 end
+                # Always update the verbose description
+                query_database( "UPDATE #{SENSOR_STATUS} SET verbose='#{verbose}' WHERE mac='#{sensor_mac}'" )
             else
                 # add the sensor to the database
-                query_database( "INSERT INTO #{SENSOR_STATUS} (name, status, enabled, mac, type, battery) VALUES ('#{sensor_type}','#{sensor_status}',1,'#{sensor_mac}','#{sensor_type}',#{sensor_battery})")
+                query_database( "INSERT INTO #{SENSOR_STATUS} (name, status, enabled, mac, type, battery, verbose) VALUES ('#{sensor_type}','#{sensor_status}',1,'#{sensor_mac}','#{sensor_type}',#{sensor_battery},'#{verbose}')")
             end
         end # determine_sensor
+        
+        # get_status_description
+        def get_status_description( status, type )
+            case type
+            when "door"
+                case status
+                when 0
+                    "closed"
+                when 1
+                    "open"
+                end
+            when "window"
+                "undefined"
+            when "smoke"
+                "undefined"
+            when "co"
+                "undefined"
+            end
+        end # get_status_description
         
         # get_battery_percentage
         def get_battery_percentage( battery_level, sensor_type )

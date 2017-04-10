@@ -64,12 +64,13 @@ module Applications
             emergency_contact_available = !get_emergency_contact.empty?
             if emergency_contact_available
                 # Respond with welcome message
-                message = "Welcome to your Securitech I O T Home Security System."\
-                " It appears you have already set up an emergency contact."\
-                " You can tell me commands such as."\
-                " Ask Securitech to add an emergency contact."\
-                " Ask Securitech to disable the alarm. Or."\
-                " Tell Securitech to enable the window sensor"
+                message = "Who are you? What are you doing? Get out of my house. Now!"
+                #message = "Welcome to your Securitech I O T Home Security System."\
+                #" It appears you have already set up an emergency contact."\
+                #" You can tell me commands such as."\
+                #" Ask Securitech to add an emergency contact."\
+                #" Ask Securitech to disable the alarm. Or."\
+                #" Tell Securitech to enable the window sensor"
             else
                 # Notify user to set up emergency contact
                 message = "Welcome to your Securitech I O T Home Security system."\
