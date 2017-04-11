@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-
+$0 = "thin_server"
 require_relative '../lib/framework'
 require 'byebug'
 

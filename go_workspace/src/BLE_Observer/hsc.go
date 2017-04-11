@@ -3,13 +3,14 @@ package main
 import (
 
 	g "github.com/currantlabs/gatt"
-	cmd "github.com/currantlabs/gatt/linux/cmd"
+	//cmd "github.com/currantlabs/gatt/linux/cmd"
 	"fmt"
 	"bytes"
 	json "encoding/json"
 	bin "encoding/binary"
 	http "net/http"
 	r "runtime"
+	"os/exec"
 )
 
 var jsonenabled bool = true
@@ -38,21 +39,22 @@ func onPeriphDiscovered(p g.Peripheral, a *g.Advertisement, r int) {
 	//fmt.Println("  Local Name        =", a.LocalName)
 	//fmt.Println("  TX Power Level    =", a.TxPowerLevel)
 	//fmt.Println("  Manufacturer Data =", a.ManufacturerData)
- 	if bytes.Equal(a.ManufacturerData, []byte{0xec, 0x9c, 0xd9, 0xc3, 0x2a, 0xed, 0xd0, 0x7f, 0x70, 0x61}){
+ 	if bytes.Equal(a.ManufacturerData, []byte{0xec, 0x9c, 0xd9, 0xc3, 0x2a, 0xed}){ //0xd0, 0x7f, 0x70, 0x61}){
 		fmt.Println("Compatible device detected:", p.ID())
+		fmt.Println("  RSSI              =", r, "\n")
 		p.Device().StopScanning()
 		p.Device().Connect(p)
 	} else {
 		//fmt.Println("Incompatible device detected:", p.ID())
 	}
 	//fmt.Println("  Service Data      =", a.ServiceData)
-	//fmt.Println("  RSSI              =", r, "\n")
+	
 }
 
 func onPeriphConnected(p g.Peripheral, err error) {
 	fmt.Println("Connected")
 	
-	//p.SetMTU(23)
+	//p.SetMTU(46)
 	
 	//pos documentation lies and claims to support UUID filtering. Source doesn't.
 	fmt.Println("Discovering Services...")
@@ -96,7 +98,7 @@ func onPeriphConnected(p g.Peripheral, err error) {
 		if (e != nil){
 			fmt.Println("JSON Marshal Error: ", e)
 		}
-		fmt.Println(string([]byte(p.ID())))
+		//fmt.Println(string([]byte(p.ID())))
 		fmt.Println(string(message))
 		url := "http://0.0.0.0:3000/sensor"
 		req, e := http.NewRequest("POST", url, bytes.NewBuffer(message))
@@ -104,29 +106,40 @@ func onPeriphConnected(p g.Peripheral, err error) {
 			fmt.Println("HTTP Request Formation Error: ", e)
 		}
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		client := &http.Client{}
+
 		//_ = client
 		resp, e := client.Do(req)
 		
-		//memory leak solution. defer is amazing
-		defer resp.Body.Close()
-		
 		if (e!=nil){
 			fmt.Println("Client Response Error: ", e)
+			return
 		}
-		fmt.Println(resp)
+		//memory leak solution. defer is amazing
+		defer resp.Body.Close()
+		//fmt.Println(resp)
 		}
 	
 	}
 
 func onPeriphDisconnected(p g.Peripheral, err error) {
 	fmt.Println("Disconnected")
+	if (err!=nil){fmt.Printf("Error: %s\n",err)}
 	p.Device().Scan([]g.UUID{}, true)
 	return
 }
 
 func main() {
+
+	out, erro := exec.Command("sudo", "hciconfig", "hci0", "down").Output()
+	_ = out;
+	if erro != nil {
+		fmt.Printf("Error: %s\n",erro)
+		return
+	}
+		
+
 	//this device is the pi bluetooth "device" only
 	//dev, err := g.NewDevice(g.LnxSetAdvertisingParameters(&cmd.LESetAdvertisingParameters{AdvertisingIntervalMin:0x800}))
 	dev, err := g.NewDevice()
@@ -138,9 +151,9 @@ func main() {
 		fmt.Printf("Device Created. \n")
 	}
 	
-	threads := r.NumCPU()
+	threads := r.NumCPU();
 	desthreads := 2
-	r.GOMAXPROCS(desthreads)
+	threads = r.GOMAXPROCS(desthreads)
 	fmt.Println("Limiting to: ", desthreads, " threads from ", threads, " threads.")
 	
 	dev.Handle(
@@ -153,10 +166,7 @@ func main() {
 
 
 	//blocking
-	for{
-		
-		/*this shows that it's possible to periodically (or conditionally) reset the device if it ever gives you trouble
-		t.Sleep(10000 * t.Millisecond)
-		fmt.Println("Hello there!")*/
-	}
+	//using select{} doesn't hog all cpu, for{} does
+	//for{}
+	select{}
 }

@@ -17,8 +17,7 @@ module Applications
         end
 
         private
-        
-        
+                
         # determine_alarm
         # Description:  Turn on or off the external alarm speaker based on values in 
         #               mostly the database table 'sensor_status"
@@ -95,7 +94,7 @@ module Applications
         # Outputs:      None
         def log_event( sensor_list, disconnected_sensors )
             disconnected_sensors.each do |sensor|
-                description = "THe hub has not received a signal from this sensor in over 15 minutes"
+                description = "The hub has not received a signal from this sensor in over 15 minutes"
                 @db_client.query( "INSERT INTO #{EVENT_LOG} (type, name, description) VALUES ('#{sensor}', '#{sensor}', '#{description}')" ) 
             end
             sensor_list.each do |sensor|
@@ -103,9 +102,9 @@ module Applications
                 case sensor
                 when "door"
                     description = "Door opened"
-                when "window"
+                when "wndw"
                     description = "Window was opened from outside"
-                when "smoke"
+                when "smco"
                     description = "Smoke alarm detected some smoke"
                 end
                 @db_client.query( "INSERT INTO #{EVENT_LOG} (type, name, description) VALUES ('#{sensor}', '#{sensor}', '#{description}')" )

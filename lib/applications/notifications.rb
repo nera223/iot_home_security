@@ -16,7 +16,7 @@ module Applications
             @db_client = db_client
             @sensors = alarm_sensors
             generate_text_file
-            #call_email_script
+            call_email_script
         end # initialize
     
         private

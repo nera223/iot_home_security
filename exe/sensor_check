@@ -1,6 +1,6 @@
 #!/bin/sh
 while :
 do
-    curl -H "Content-Type: application/json" -X POST -d '{"sensor_check":true}' http://0.0.0.0:3000/sensorcheck
+    curl -H "Content-Type: application/json" -X POST -d '{"sensor_check":true}' http://0.0.0.0:3000/sensorcheck >> /tmp/log/sensor_check.log
     sleep 900
 done

@@ -64,13 +64,12 @@ module Applications
             emergency_contact_available = !get_emergency_contact.empty?
             if emergency_contact_available
                 # Respond with welcome message
-                message = "Who are you? What are you doing? Get out of my house. Now!"
-                #message = "Welcome to your Securitech I O T Home Security System."\
-                #" It appears you have already set up an emergency contact."\
-                #" You can tell me commands such as."\
-                #" Ask Securitech to add an emergency contact."\
-                #" Ask Securitech to disable the alarm. Or."\
-                #" Tell Securitech to enable the window sensor"
+                message = "Welcome to your Securitech I O T Home Security System."\
+                " It appears you have already set up an emergency contact."\
+                " You can tell me commands such as."\
+                " Ask Securitech to add an emergency contact."\
+                " Ask Securitech to disable the alarm. Or."\
+                " Tell Securitech to enable the window sensor"
             else
                 # Notify user to set up emergency contact
                 message = "Welcome to your Securitech I O T Home Security system."\
@@ -427,7 +426,7 @@ module Applications
         def home_mode
             # This function does the same that dismiss_alarm does, except a more useful reply from Alexa
             message = "Welcome back. I have turned off the alarm"
-            query_database( "UPDATE #{SENSOR_STATUS} SET dismiss=1 WHERE status=1" )
+            query_database( "UPDATE #{SENSOR_STATUS} SET dismiss=1 WHERE status>0" )
             query_database( "UPDATE #{ALEXA_INFORMATION} SET mode='home'" )
             Alarm.new( @db_client )
             build_response( message )
@@ -436,7 +435,7 @@ module Applications
         # dismiss_alarm
         def dismiss_alarm
             message = "Okay, ignoring this alarm"
-            query_database( "UPDATE #{SENSOR_STATUS} SET dismiss=1 WHERE status=1" )
+            query_database( "UPDATE #{SENSOR_STATUS} SET dismiss=1 WHERE status>1" )
             # Update the alarm condition
             Alarm.new( @db_client )
             build_response( message )
@@ -461,6 +460,11 @@ module Applications
             end
             message = "Alright, deactivating the #{sensor_type} sensor"
             #TODO The online interface needs to be able to understand the different sensor names
+			if sensor_type == "window"
+				sensor_type = "wndw"
+			elsif sensor_type == "smoke"
+				sensor_type = "smco"
+			end
             query_database( "UPDATE #{SENSOR_STATUS} SET enabled='0' WHERE name='#{sensor_type}'" )
             Alarm.new( @db_client )
             build_response( message )

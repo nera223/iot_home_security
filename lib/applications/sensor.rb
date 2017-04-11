@@ -19,13 +19,13 @@ module Applications
             if request_valid?( request )
                 determine_sensor( request )
             else
-                return [BAD_RESPONSE_CODE, 
+                return [BAD_RESPONSE_CODE,
                         {'Content-Type' => 'text/plain'},
                         ["The request sent did not have all of the required information\n"]
                        ]
             end
             Alarm.new( @db_client )
-            return [GOOD_RESPONSE_CODE, 
+            return [GOOD_RESPONSE_CODE,
                     {'Content-Type' => 'text/plain'},
                     ["GOOD\n"]
                    ]
@@ -74,11 +74,18 @@ module Applications
                 when 1
                     "open"
                 end
-            when "window"
-                "undefined"
-            when "smoke"
-                "undefined"
-            when "co"
+            when "wndw"
+				case status
+				when 0
+					"window closed"
+				when 1
+					"window open"
+				when 2
+					"window open"
+				when 3
+					"window open"
+				end
+            when "smco"
                 "undefined"
             end
         end # get_status_description

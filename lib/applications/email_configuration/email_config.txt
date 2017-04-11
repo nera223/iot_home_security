@@ -1,5 +1,5 @@
 Nathan Test
 8597534556@txt.att.net
 ole.wendroth@gmail.com
-door
-An alarm was triggered at your home for the door sensor.
+wndw
+An alarm was triggered at your home for the wndw sensor.
