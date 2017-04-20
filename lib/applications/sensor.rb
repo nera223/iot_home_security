@@ -66,34 +66,36 @@ module Applications
         
         # get_status_description
         def get_status_description( status, type )
+			description = "undefined"
             case type
             when "door"
                 case status
                 when 0
-                    "closed"
+                    description = "closed"
                 when 1
-                    "open"
+                    description = "open"
                 end
             when "wndw"
 				case status
 				when 0
-					"window closed"
+					description = "window closed"
 				when 1
-					"window open"
+					description = "window open"
 				when 2
-					"window open"
+					description = "window open"
 				when 3
-					"window open"
+					description = "window open"
 				end
             when "smco"
-                "undefined"
+                description = "undefined"
             end
+			return description
         end # get_status_description
         
         # get_battery_percentage
         def get_battery_percentage( battery_level, sensor_type )
             # Insert code here to convert 
-            return "100"
+            return battery_level
         end # get_battery_percentage
 
         # safe_to_reset_sensor?

@@ -10,10 +10,18 @@ module Applications
             # Check validity of the request
             #TODO maybe there will be two types of requests, one where sensors are being set update
             #   # and another where sensor statuses are being updated
-            if request_valid?( request )
-                # Save path and description to database
-                # The timestamp will be automatically updated
-                query_database( "INSERT INTO #{MEDIA_ARCHIVE}} (path, description) VALUES ('#{request["path"]}', '#{request["description"]}')")
+            if type = request_valid?( request )
+                case type
+                when 1
+                    # Update camera history
+                    query_database( "INSERT INTO #{CAMERA_HISTORY} (id, type, name, description, trigger_time) VALUES ('#{request["id"]}','#{request["type"]}','#{request["name"]}','#{request["description"]}','#{request["trigger_time"]}')" )
+                when 2
+                    # Update camera status
+                    query_database( "INSERT INTO #{CAMERA_STATUS} (id, name, status, updated_time, enabled, mac, type, live_url) VALUES ('#{request["id"]}','#{request["name"]}','#{request["status"]}','#{request["updated_time"]}','#{request["enabled"]}','#{request["mac"]}','#{request["type"]}','#{request["live_url"]}')" )
+                when 3
+                    # Create notification
+                    Notification.new( @db_client, [request["path"], request["description"], request["live_url"]] )
+                end
             else
                 return [BAD_RESPONSE_CODE, 
                         {'Content-Type' => 'text/plain'},
@@ -32,13 +40,27 @@ module Applications
         
         # request_valid?
         def request_valid?( request )
-            required_keys = ["path", "description"]
-            required_keys.each do |key|
-                if !request.has_key?(key)
-                    return false
-                end
-            end
-            return true
+			# The camera sends a few different requests
+			# First type of request updates the camera history
+			# Second type of request updates the camera statuses
+			# Third type of request contains a path to a file to send an email/SMS
+            type1_request = ["id", "type", "name", "description", "trigger_time"]
+			type2_request = ["id", "name", "status", "updated_time", "enabled", "mac", "type", "live_url"]
+			type3_request = ["path", "live_url", "description", "time_stamp"]
+			res = [type1_request, type2_request, type3_request].map do |required_keys|
+				required_keys.each do |key|
+					if !request.has_key?( key )
+						return false
+					end
+				end
+				return true
+			end
+			# If the request matched one of the types, return the type or nil
+			if a = res.index( true )
+				return a + 1
+			else
+				return false
+			end
         end # request_valid?
     end # class
 end # module

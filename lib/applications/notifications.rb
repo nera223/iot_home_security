@@ -11,6 +11,7 @@ module Applications
     class Notification
         # initialize
         #   # alarm_sensors is an array of all alarms that are showing a 1 status
+        #   # alarm_sensors can also be consisting of the path and live URL link for the camera
         def initialize( db_client, alarm_sensors )
             # A connection to the database is passed around the different classes
             @db_client = db_client

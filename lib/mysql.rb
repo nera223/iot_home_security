@@ -1,15 +1,17 @@
 require 'mysql2'
 # This file will contains methods to connect to database
 # This table will be updated with the reading of the current sensor status
-SENSOR_STATUS   = "sensor_status"
+SENSOR_STATUS       = "sensor_status"
 # This table will hold information of the information for the emergency contact
-EMERGENCY_CONTACT = "emergency_contacts"
+EMERGENCY_CONTACT   = "emergency_contacts"
 # Holds information for the primary user and other system information like the alarm password
-ALEXA_INFORMATION = "alexa"
-# Holds information for the media archive. Stores path information on the HDD and a description, along with a timestamp
-MEDIA_ARCHIVE = "media"
+ALEXA_INFORMATION   = "alexa"
+# Holds information for the motion detection events
+CAMERA_HISTORY      = "camera_history"
+# Holds information for the camera status
+CAMERA_STATUS       = "camera_status"
 # Holds an event log for sensor alarm states
-EVENT_LOG = "sensor_history"
+EVENT_LOG           = "sensor_history"
 
 class Database
 
@@ -29,4 +31,4 @@ class Database
     end
 
 
-end # class Databse
+end # class Database

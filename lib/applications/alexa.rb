@@ -435,21 +435,21 @@ module Applications
         # dismiss_alarm
         def dismiss_alarm
             message = "Okay, ignoring this alarm"
-            query_database( "UPDATE #{SENSOR_STATUS} SET dismiss=1 WHERE status>1" )
+            query_database( "UPDATE #{SENSOR_STATUS} SET dismiss=1 WHERE status>0" )
             # Update the alarm condition
             Alarm.new( @db_client )
             build_response( message )
         end # dismiss_alarm
 
         def disable_system
-            message = "Okay, deactivating the alarm"
-            query_database( "UPDATE #{SENSOR_STATUS} SET enabled=0" )
+            message = "Okay, deactivating the system"
+            query_database( "UPDATE #{SENSOR_STATUS} SET enabled=0, dismiss=0" )
             Alarm.new( @db_client )
             build_response( message )
         end
 
         def enable_system
-            message = "Okay, I'm going to activate the alarm"
+            message = "Okay, I'm going to activate the system"
             query_database( "UPDATE #{SENSOR_STATUS} SET enabled=1, dismiss=0")
             build_response( message )
         end
@@ -473,6 +473,11 @@ module Applications
         def enable_sensor
             sensor_type = @request["request"]["intent"]["slots"]["Sensor"]["value"]
             message = "Alright, I'm going to activate the #{sensor_type} sensor"
+			if sensor_type == "window"
+				sensor_type = "wndw"
+			elsif sensor_type == "smoke"
+				sensor_type = "smco"
+			end
             query_database( "UPDATE #{SENSOR_STATUS} SET enabled='1' WHERE name='#{sensor_type}'" )
             build_response( message )
         end
